@@ -83,7 +83,6 @@ export default function Home() {
         display: "flex", alignItems: "center", justifyContent: "space-between",
         boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.15)" : "none"
       }}>
-        {/* logo */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ width: "36px", height: "36px", background: "#1a73e8", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "700", fontSize: "16px", flexShrink: 0 }}>N</div>
           <div>
@@ -92,7 +91,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* desktop nav */}
         <div className="nav-desktop">
           {navLinks.map(item => (
             <a key={item.label} href={item.href} style={{ color: "rgba(255,255,255,0.85)", textDecoration: "none", fontSize: "14px", fontWeight: "500" }}>{item.label}</a>
@@ -100,7 +98,6 @@ export default function Home() {
           <Link href="/book" style={{ background: "#1a73e8", color: "white", padding: "10px 22px", borderRadius: "25px", textDecoration: "none", fontSize: "14px", fontWeight: "600" }}>Book OPD</Link>
         </div>
 
-        {/* hamburger */}
         <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
           <span style={{ width: "22px", height: "2px", background: "white", display: "block", transition: "all 0.3s", transform: menuOpen ? "rotate(45deg) translate(5px, 5px)" : "none" }} />
           <span style={{ width: "22px", height: "2px", background: "white", display: "block", opacity: menuOpen ? 0 : 1 }} />
@@ -158,9 +155,11 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+
+              {/* OPD timings card */}
               <div style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: "16px", padding: "20px 24px", marginTop: "16px" }}>
-                <div style={{ color: "#90caf9", fontSize: "12px", marginBottom: "8px", letterSpacing: "1px" }}>OPD TIMINGS</div>
-                <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+                <div style={{ color: "#90caf9", fontSize: "12px", marginBottom: "10px", letterSpacing: "1px" }}>OPD TIMINGS</div>
+                <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", marginBottom: "10px" }}>
                   <div>
                     <div style={{ fontWeight: "600", color: "white", fontSize: "14px" }}>10:00 AM – 1:15 PM</div>
                     <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "12px" }}>Morning · 72 slots</div>
@@ -169,6 +168,12 @@ export default function Home() {
                   <div>
                     <div style={{ fontWeight: "600", color: "white", fontSize: "14px" }}>3:30 PM – 6:45 PM</div>
                     <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "12px" }}>Evening · 72 slots</div>
+                  </div>
+                </div>
+                {/* Sunday note */}
+                <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "8px" }}>
+                  <div style={{ color: "#90caf9", fontSize: "12px" }}>
+                    🗓 <strong>Sunday:</strong> Morning only — 10:00 AM – 1:00 PM
                   </div>
                 </div>
               </div>
@@ -290,9 +295,11 @@ export default function Home() {
             <div>
               <div style={{ color: "white", fontWeight: "600", marginBottom: "16px", fontSize: "13px", letterSpacing: "1px" }}>OPD TIMINGS</div>
               <div style={{ fontSize: "14px", lineHeight: "2" }}>
+                <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "12px", fontWeight: "600" }}>Mon – Sat</div>
                 <div>Morning: <span style={{ color: "white" }}>10:00 AM – 1:15 PM</span></div>
                 <div>Evening: <span style={{ color: "white" }}>3:30 PM – 6:45 PM</span></div>
-                <div>Days: <span style={{ color: "white" }}>Mon – Sun</span></div>
+                <div style={{ marginTop: "10px", color: "rgba(255,255,255,0.6)", fontSize: "12px", fontWeight: "600" }}>Sunday</div>
+                <div>Morning only: <span style={{ color: "white" }}>10:00 AM – 1:00 PM</span></div>
                 <div style={{ marginTop: "8px", color: "#90caf9" }}>Emergency: 24/7</div>
               </div>
             </div>

@@ -36,7 +36,7 @@ export default function Home() {
   ];
 
   const team = [
-    { name: "Dr. G.K. Boob", role: "Orthopaedic Surgeon", qual: "DNB Ortho | Fellowship Spine Surgery, Germany", time: "OPD: 10am–1:15pm & 3:30–6:45pm" },
+    { name: "Dr. G.K. Boob", role: "Orthopaedic Surgeon", qual: "DNB Ortho | Fellowship Spine Surgery, Germany", time: "Mon–Sat: 10am–1:15pm & 3:30–6:45pm | Sun: 10am–1pm only" },
     { name: "Dr. Vijay Rangani", role: "Anaesthetist", qual: "MBBS / DA", time: "Pre-anaesthetic checkup & anaesthesia" },
     { name: "Dr. Jay Pathak", role: "Physiotherapist", qual: "B.PTH", time: "Post-surgical rehabilitation" },
     { name: "Dr. Chetan Bhambure", role: "Physician & Cardiologist", qual: "DM Cardiology", time: "9am–10am | Pre-surgery fitness" },
@@ -98,12 +98,7 @@ export default function Home() {
         transition: "all 0.3s"
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{
-            width: "36px", height: "36px", background: "#0066ff",
-            borderRadius: "10px", display: "flex", alignItems: "center",
-            justifyContent: "center", color: "white", fontWeight: "700", fontSize: "16px",
-            fontFamily: "'DM Serif Display', serif"
-          }}>N</div>
+          <div style={{ width: "36px", height: "36px", background: "#0066ff", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "700", fontSize: "16px", fontFamily: "'DM Serif Display', serif" }}>N</div>
           <div>
             <div style={{ fontWeight: "700", fontSize: "14px", color: "#0a0a0a", letterSpacing: "-0.3px" }}>Neel Orthopaedic</div>
             <div style={{ fontSize: "10px", color: "#999", letterSpacing: "1.5px", fontWeight: "500" }}>MULTISPECIALITY HOSPITAL</div>
@@ -126,12 +121,7 @@ export default function Home() {
               <span className="dot" />
               Bhayander East, Mumbai — Est. 2009
             </div>
-            <h1 style={{
-              fontFamily: "'DM Serif Display', serif",
-              fontSize: "clamp(40px, 5.5vw, 68px)",
-              color: "#0a0a0a", lineHeight: "1.08",
-              letterSpacing: "-2px", marginBottom: "24px"
-            }}>
+            <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(40px, 5.5vw, 68px)", color: "#0a0a0a", lineHeight: "1.08", letterSpacing: "-2px", marginBottom: "24px" }}>
               Advanced<br />
               <span style={{ color: "#0066ff" }}>Orthopaedic</span><br />
               Care.
@@ -161,9 +151,11 @@ export default function Home() {
                 <div style={{ fontSize: "13px", color: "#888", marginTop: "8px", fontWeight: "400" }}>{s.label}</div>
               </div>
             ))}
+
+            {/* ── OPD TIMINGS CARD — Sunday fix ── */}
             <div className="stat-card" style={{ gridColumn: "1/-1", background: "#f7faff", border: "1px solid #ddeaff" }}>
-              <div style={{ fontSize: "12px", color: "#0066ff", fontWeight: "600", letterSpacing: "1px", marginBottom: "8px" }}>OPD TIMINGS</div>
-              <div style={{ display: "flex", gap: "24px" }}>
+              <div style={{ fontSize: "12px", color: "#0066ff", fontWeight: "600", letterSpacing: "1px", marginBottom: "10px" }}>OPD TIMINGS</div>
+              <div style={{ display: "flex", gap: "24px", marginBottom: "10px" }}>
                 <div>
                   <div style={{ fontWeight: "600", color: "#0a0a0a", fontSize: "15px" }}>10:00 AM – 1:15 PM</div>
                   <div style={{ color: "#888", fontSize: "13px" }}>Morning session · 72 slots</div>
@@ -171,7 +163,12 @@ export default function Home() {
                 <div style={{ width: "1px", background: "#ddeaff" }} />
                 <div>
                   <div style={{ fontWeight: "600", color: "#0a0a0a", fontSize: "15px" }}>3:30 PM – 6:45 PM</div>
-                  <div style={{ color: "#888", fontSize: "13px" }}>Evening session · 72 slots</div>
+                  <div style={{ color: "#888", fontSize: "13px" }}>Evening session · 72 slots · Mon–Sat</div>
+                </div>
+              </div>
+              <div style={{ borderTop: "1px solid #ddeaff", paddingTop: "8px" }}>
+                <div style={{ fontSize: "12px", color: "#0066ff" }}>
+                  🗓 <strong>Sunday:</strong> Morning only — 10:00 AM – 1:00 PM
                 </div>
               </div>
             </div>
@@ -189,8 +186,7 @@ export default function Home() {
               <p className="section-sub">From robotic-assisted joint replacements to complex spine surgeries — advanced orthopaedic care under one roof.</p>
               <div style={{ marginTop: "32px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 {services.map((s, i) => (
-                  <button key={i} className={`service-pill ${activeService === i ? "active" : ""}`}
-                    onClick={() => setActiveService(i)}>
+                  <button key={i} className={`service-pill ${activeService === i ? "active" : ""}`} onClick={() => setActiveService(i)}>
                     {s.title.split(" ")[0]} {s.title.split(" ")[1]}
                   </button>
                 ))}
@@ -199,9 +195,7 @@ export default function Home() {
             <div style={{ background: "white", borderRadius: "24px", padding: "40px", border: "1px solid #f0f0f0", minHeight: "280px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
               <div>
                 <div style={{ width: "48px", height: "48px", background: "#f0f5ff", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", color: "#0066ff", marginBottom: "24px" }}>+</div>
-                <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "28px", color: "#0a0a0a", letterSpacing: "-0.5px", marginBottom: "8px" }}>
-                  {services[activeService].title}
-                </h3>
+                <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "28px", color: "#0a0a0a", letterSpacing: "-0.5px", marginBottom: "8px" }}>{services[activeService].title}</h3>
                 <p style={{ color: "#888", fontSize: "15px", fontWeight: "300" }}>{services[activeService].sub}</p>
               </div>
               {activeService === 0 && (
@@ -251,14 +245,7 @@ export default function Home() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "20px" }}>
             {team.map((t, i) => (
               <div key={i} className="team-card">
-                <div style={{
-                  width: "52px", height: "52px", borderRadius: "14px",
-                  background: i === 0 ? "#0066ff" : "#f5f5f5",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'DM Serif Display', serif",
-                  fontSize: "20px", color: i === 0 ? "white" : "#333",
-                  marginBottom: "20px", fontWeight: "700"
-                }}>
+                <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: i === 0 ? "#0066ff" : "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Serif Display', serif", fontSize: "20px", color: i === 0 ? "white" : "#333", marginBottom: "20px", fontWeight: "700" }}>
                   {t.name.split(" ")[1][0]}
                 </div>
                 <div style={{ fontWeight: "600", fontSize: "16px", color: "#0a0a0a", marginBottom: "4px" }}>{t.name}</div>
@@ -293,11 +280,7 @@ export default function Home() {
                   <div style={{ fontWeight: "600", color: "#0a0a0a", fontSize: "15px" }}>{r.type}</div>
                   <div style={{ color: "#888", fontSize: "13px", marginTop: "2px" }}>Room {r.rooms}</div>
                 </div>
-                <div style={{
-                  background: "#f0f5ff", color: "#0066ff",
-                  padding: "4px 12px", borderRadius: "100px",
-                  fontSize: "12px", fontWeight: "600"
-                }}>{r.beds} beds</div>
+                <div style={{ background: "#f0f5ff", color: "#0066ff", padding: "4px 12px", borderRadius: "100px", fontSize: "12px", fontWeight: "600" }}>{r.beds} beds</div>
               </div>
             ))}
           </div>
@@ -358,16 +341,20 @@ export default function Home() {
                 <div key={s} style={{ marginBottom: "10px", fontSize: "13px", fontWeight: "300" }}>{s}</div>
               ))}
             </div>
+
+            {/* ── FOOTER TIMINGS — Sunday fix ── */}
             <div>
               <div style={{ color: "rgba(255,255,255,0.2)", fontSize: "11px", letterSpacing: "1.5px", fontWeight: "600", marginBottom: "16px" }}>TIMINGS</div>
               <div style={{ fontSize: "13px", lineHeight: "1.9", fontWeight: "300" }}>
-                <div style={{ color: "rgba(255,255,255,0.6)", fontWeight: "500" }}>OPD</div>
+                <div style={{ color: "rgba(255,255,255,0.6)", fontWeight: "500" }}>OPD · Mon–Sat</div>
                 <div>10:00 – 13:15</div>
                 <div>15:30 – 18:45</div>
-                <div style={{ color: "rgba(255,255,255,0.6)", fontWeight: "500", marginTop: "12px" }}>Surgery OT</div>
+                <div style={{ color: "rgba(255,255,255,0.6)", fontWeight: "500", marginTop: "10px" }}>OPD · Sunday</div>
+                <div>10:00 – 13:00 only</div>
+                <div style={{ color: "rgba(255,255,255,0.6)", fontWeight: "500", marginTop: "10px" }}>Surgery OT</div>
                 <div>07:00 – 10:00</div>
                 <div>14:00 – 15:00</div>
-                <div style={{ color: "#0066ff", marginTop: "12px", fontWeight: "500" }}>Emergency 24/7</div>
+                <div style={{ color: "#0066ff", marginTop: "10px", fontWeight: "500" }}>Emergency 24/7</div>
               </div>
             </div>
           </div>
