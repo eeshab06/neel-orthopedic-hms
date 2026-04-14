@@ -1,9 +1,9 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-export default function NotesPage() {
+function NotesContent() {
   const params = useSearchParams()
   const ipdId = params.get('id')
   const [record, setRecord] = useState<any>(null)
@@ -20,7 +20,7 @@ export default function NotesPage() {
     const { data } = await supabase
       .from('ipd_record')
       .select('*, patient:patient_id (name, uhid)')
-      .eq('id', ipdId)
+      .eq('ipd_id', ipdId)
       .single()
     setRecord(data)
   }
@@ -29,7 +29,7 @@ export default function NotesPage() {
     const { data } = await supabase
       .from('ipd_record')
       .select('notes')
-      .eq('id', ipdId)
+      .eq('ipd_id', ipdId)
       .single()
     if (data?.notes) setNotes(JSON.parse(data.notes || '[]'))
   }
@@ -39,7 +39,7 @@ export default function NotesPage() {
     setLoading(true)
     const entry = { date: new Date().toISOString(), doctor, text: newNote }
     const updated = [...notes, entry]
-    await supabase.from('ipd_record').update({ notes: JSON.stringify(updated) }).eq('id', ipdId)
+    await supabase.from('ipd_record').update({ notes: JSON.stringify(updated) }).eq('ipd_id', ipdId)
     setNotes(updated); setNewNote(''); setLoading(false)
   }
 
@@ -52,7 +52,7 @@ export default function NotesPage() {
         </div>
       )}
       <div className="bg-white rounded-xl border p-6 space-y-3">
-        <h2 className="font-semibold">Add Today's Note</h2>
+        <h2 className="font-semibold">Add Today&apos;s Note</h2>
         <input value={doctor} onChange={e => setDoctor(e.target.value)}
           className="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Doctor name" />
         <textarea value={newNote} onChange={e => setNewNote(e.target.value)}
@@ -73,5 +73,13 @@ export default function NotesPage() {
         ))}
       </div>
     </div>
+  )
+}
+
+export default function NotesPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-gray-400">Loading...</div>}>
+      <NotesContent />
+    </Suspense>
   )
 }
