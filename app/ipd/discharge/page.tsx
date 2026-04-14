@@ -1,9 +1,9 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-export default function DischargePage() {
+function DischargeContent() {
   const params = useSearchParams()
   const ipdId = params.get('id')
   const [record, setRecord] = useState<any>(null)
@@ -16,18 +16,19 @@ export default function DischargePage() {
     const { data } = await supabase
       .from('ipd_record')
       .select('*, patient:patient_id (name, phone, uhid)')
-      .eq('id', ipdId).single()
+      .eq('ipd_id', ipdId).single()
     setRecord(data)
   }
 
   async function saveDischarge() {
     const { error } = await supabase.from('discharge').insert([{
-      ipd_record_id: ipdId,
+      ipd_id: ipdId,
       patient_id: record.patient_id,
-      ...form
+      discharge_date: form.discharge_date,
+      discharge_summary: Diagnosis: ${form.diagnosis}\nMedicines: ${form.medicines}\nFollow-up: ${form.follow_up}
     }])
     if (!error) {
-      await supabase.from('ipd_record').update({ status: 'discharged' }).eq('id', ipdId)
+      await supabase.from('ipd_record').update({ status: 'discharged' }).eq('ipd_id', ipdId)
       setSaved(true)
     }
   }
@@ -85,5 +86,13 @@ export default function DischargePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function DischargePage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-gray-400">Loading...</div>}>
+      <DischargeContent />
+    </Suspense>
   )
 }
