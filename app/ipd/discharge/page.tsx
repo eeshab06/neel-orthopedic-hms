@@ -25,7 +25,7 @@ function DischargeContent() {
       ipd_id: ipdId,
       patient_id: record.patient_id,
       discharge_date: form.discharge_date,
-      discharge_summary: Diagnosis: ${form.diagnosis}\nMedicines: ${form.medicines}\nFollow-up: ${form.follow_up}
+      discharge_summary: 'Diagnosis: ' + form.diagnosis + ' | Medicines: ' + form.medicines + ' | Follow-up: ' + form.follow_up
     }])
     if (!error) {
       await supabase.from('ipd_record').update({ status: 'discharged' }).eq('ipd_id', ipdId)
