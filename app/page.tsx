@@ -137,7 +137,7 @@ export default function Home() {
               </h1>
               <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "clamp(14px, 2vw, 18px)", fontStyle: "italic", marginBottom: "16px" }}>— pain to painless —</p>
               <p style={{ color: "rgba(255,255,255,0.75)", fontSize: "clamp(14px, 1.8vw, 16px)", lineHeight: "1.7", marginBottom: "32px", maxWidth: "500px" }}>
-                Home to Mumbai's first <strong style={{ color: "white" }}>VELYS™ Robotic Knee Replacement</strong> system by Johnson &amp; Johnson MedTech.
+                Offering the <strong style={{ color: "white" }}>VELYS™ Robotic Knee Replacement</strong> system by Johnson &amp; Johnson MedTech.
               </p>
               <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
                 <Link href="/book" style={{ background: "white", color: "#0a2463", padding: "14px 28px", borderRadius: "30px", textDecoration: "none", fontSize: "15px", fontWeight: "700", boxShadow: "0 4px 20px rgba(0,0,0,0.2)" }}>Book Appointment</Link>
@@ -167,10 +167,9 @@ export default function Home() {
                   <div style={{ width: "1px", background: "rgba(255,255,255,0.15)" }} />
                   <div>
                     <div style={{ fontWeight: "600", color: "white", fontSize: "14px" }}>3:30 PM – 6:45 PM</div>
-                    <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "12px" }}>Evening · 72 slots</div>
+                    <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "12px" }}>Evening · 72 slots · Mon–Sat</div>
                   </div>
                 </div>
-                {/* Sunday note */}
                 <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "8px" }}>
                   <div style={{ color: "#90caf9", fontSize: "12px" }}>
                     🗓 <strong>Sunday:</strong> Morning only — 10:00 AM – 1:00 PM
