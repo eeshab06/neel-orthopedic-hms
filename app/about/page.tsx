@@ -83,8 +83,7 @@ export default function AboutPage() {
                 {[
                   { label: "Qualification", value: "DNB Orthopaedic Surgery" },
                   { label: "Fellowship", value: "Spine Surgery, Germany" },
-                  { label: "MBBS", value: "CMS, Nepal (ISME, USA)" },
-                  { label: "MCI Reg.", value: "No. 24946" },
+                 
                 ].map((item, i) => (
                   <div key={i} style={{ background: "rgba(255,255,255,0.08)", borderRadius: "8px", padding: "10px 14px", textAlign: "left" }}>
                     <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", letterSpacing: "1px", marginBottom: "2px" }}>{item.label.toUpperCase()}</div>
