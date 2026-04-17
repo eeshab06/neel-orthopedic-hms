@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
+import { useAuth } from "@/lib/useAuth";
+import StaffNavbar from "@/components/StaffNavbar";
 
 interface Room {
   room_id: number;
@@ -65,7 +66,7 @@ function buildBillHTML(bill: any): string {
 </style></head><body>
 <table style="margin-bottom:6px;"><tr>
   <td style="width:70%;">
-    <div style="font-size:18px;font-weight:bold;">NEEL ORTHOPEDIC SUPER SPECIALITY HOSPITAL</div>
+    <div style="font-size:18px;font-weight:bold;">NEEL orthopaedic SUPER SPECIALITY HOSPITAL</div>
     <div style="font-size:10px;margin-top:2px;">1st Floor, Shrinath Apartment, Goddev Naka, B.P. Road, Bhayander East, Thane - 401105</div>
     <div style="font-size:10px;">Ph: 7021094941 / 9594314023 | Mon–Sat: 10AM–1:15PM & 3:30–6:45PM | Sun: 10AM–1PM</div>
   </td>
@@ -114,29 +115,10 @@ function buildBillHTML(bill: any): string {
 </div>
 <hr style="margin-top:8px;"/>
 <div class="sh">DETAILED BREAKUP</div>
-<div style="font-weight:bold;font-size:11px;margin:4px 0 2px;">Room / Bed Charges</div>
-<table style="margin-bottom:6px;">
-  <thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px;text-align:left;border-bottom:1px solid #ccc;font-size:10px;">Code</th><th style="padding:4px 8px;text-align:left;border-bottom:1px solid #ccc;font-size:10px;">Particulars</th><th style="padding:4px 8px;text-align:center;border-bottom:1px solid #ccc;font-size:10px;">Rate</th><th style="padding:4px 8px;text-align:center;border-bottom:1px solid #ccc;font-size:10px;">Days</th><th style="padding:4px 8px;text-align:right;border-bottom:1px solid #ccc;font-size:10px;">Amount</th></tr></thead>
-  <tbody>
-    <tr><td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px;">100001</td><td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px;">Bed Charges — ${bill.room.room_type} (Room ${bill.room.room_number})</td><td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center;">₹${bill.room.price_per_day.toFixed(2)}</td><td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center;">${bill.days}</td><td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right;font-weight:600;">₹${bill.roomCharges.toFixed(2)}</td></tr>
-    <tr style="background:#f9f9f9;"><td colspan="4" style="padding:4px 8px;font-size:10px;font-weight:bold;text-align:right;">Subtotal:</td><td style="padding:4px 8px;font-size:11px;font-weight:bold;text-align:right;">₹${bill.roomCharges.toFixed(2)}</td></tr>
-  </tbody>
-</table>
-<div style="font-weight:bold;font-size:11px;margin:4px 0 2px;">Professional Fees</div>
-<table style="margin-bottom:6px;">
-  <thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px;text-align:left;border-bottom:1px solid #ccc;font-size:10px;">Code</th><th style="padding:4px 8px;text-align:left;border-bottom:1px solid #ccc;font-size:10px;">Particulars</th><th style="padding:4px 8px;text-align:center;border-bottom:1px solid #ccc;font-size:10px;">Rate</th><th style="padding:4px 8px;text-align:center;border-bottom:1px solid #ccc;font-size:10px;">Days</th><th style="padding:4px 8px;text-align:right;border-bottom:1px solid #ccc;font-size:10px;">Amount</th></tr></thead>
-  <tbody>
-    <tr><td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px;">200001</td><td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px;">Dr. G.K. Boob — Visiting Charges</td><td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center;">₹${bill.room.doctor_charges_per_day.toFixed(2)}</td><td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:center;">${bill.days}</td><td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px;text-align:right;font-weight:600;">₹${bill.doctorCharges.toFixed(2)}</td></tr>
-    <tr style="background:#f9f9f9;"><td colspan="4" style="padding:4px 8px;font-size:10px;font-weight:bold;text-align:right;">Subtotal:</td><td style="padding:4px 8px;font-size:11px;font-weight:bold;text-align:right;">₹${bill.doctorCharges.toFixed(2)}</td></tr>
-  </tbody>
-</table>
 <div style="font-weight:bold;font-size:11px;margin:4px 0 2px;">Pharmacy / Consumables</div>
 <table style="margin-bottom:6px;">
   <thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px;text-align:left;border-bottom:1px solid #ccc;font-size:10px;">#</th><th style="padding:4px 8px;text-align:left;border-bottom:1px solid #ccc;font-size:10px;">Item</th><th style="padding:4px 8px;text-align:center;border-bottom:1px solid #ccc;font-size:10px;">Qty</th><th style="padding:4px 8px;text-align:right;border-bottom:1px solid #ccc;font-size:10px;">Rate</th><th style="padding:4px 8px;text-align:right;border-bottom:1px solid #ccc;font-size:10px;">Amount</th></tr></thead>
-  <tbody>
-    ${medRows}
-    <tr style="background:#f9f9f9;"><td colspan="4" style="padding:4px 8px;font-size:10px;font-weight:bold;text-align:right;">Subtotal:</td><td style="padding:4px 8px;font-size:11px;font-weight:bold;text-align:right;">₹${bill.pharmacyCharges.toFixed(2)}</td></tr>
-  </tbody>
+  <tbody>${medRows}</tbody>
 </table>
 <hr/>
 <table style="margin:4px 0;"><tr style="background:#f0f4ff;">
@@ -148,17 +130,12 @@ function buildBillHTML(bill: any): string {
   <div><div style="margin-bottom:28px;font-size:10px;">Patient / Attendant</div><div style="border-top:1px solid #000;width:150px;padding-top:4px;text-align:center;font-size:10px;">Signature</div></div>
   <div style="text-align:right;"><div style="margin-bottom:28px;font-size:10px;">For Neel Orthopaedic Hospital</div><div style="border-top:1px solid #000;width:150px;padding-top:4px;text-align:center;font-size:10px;margin-left:auto;">Dr. G.K. Boob</div></div>
 </div>
-<div style="margin-top:10px;border-top:1px solid #ccc;padding-top:5px;display:flex;justify-content:space-between;font-size:9px;color:#444;">
-  <div><strong>NEEL ORTHOPEDIC AND MULTISPECIALITY HOSPITAL</strong><br/>Shrinath Tower, Goddev Naka, BP Road, Bhayander (E), Thane - 401 105</div>
-  <div style="text-align:right;"><strong>NEEL ORTHOPEDIC SUPER SPECIALITY HOSPITAL</strong><br/>1st Floor, Sheetal Niketan Co-op Housing Society, B.P. Road, Bhayander (E), Mumbai - 401 105</div>
-</div>
 <div class="fn">This is a computer generated bill — pain to painless</div>
 </body></html>`;
 }
 
 export default function RoomsPage() {
-  const [pin, setPin] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
+  const { user, loading: authLoading, signOut } = useAuth("/rooms");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [ipdMedicines, setIpdMedicines] = useState<{ id: number; name: string; unit_price: number }[]>([]);
@@ -198,86 +175,45 @@ export default function RoomsPage() {
     if (data) setIpdMedicines(data as any);
   };
 
-  // uses pres_id (correct primary key)
   const fetchMedicinesUsed = useCallback(async (ipdId: number) => {
-    const { data: prescriptions, error } = await supabase
-      .from("prescription")
-      .select("pres_id, quantity, notes, medicine_id")
-      .eq("ipd_id", ipdId);
-
-    if (error || !prescriptions || prescriptions.length === 0) {
-      setMedicinesUsed([]);
-      return;
-    }
-
+    const { data: prescriptions, error } = await supabase.from("prescription").select("pres_id, quantity, notes, medicine_id").eq("ipd_id", ipdId);
+    if (error || !prescriptions || prescriptions.length === 0) { setMedicinesUsed([]); return; }
     const medIds = [...new Set(prescriptions.map((p: any) => p.medicine_id))];
-    const { data: medicines } = await supabase
-      .from("medicine_list")
-      .select("id, name, unit_price")
-      .in("id", medIds);
-
+    const { data: medicines } = await supabase.from("medicine_list").select("id, name, unit_price").in("id", medIds);
     const medMap: Record<number, { name: string; unit_price: number }> = {};
     if (medicines) medicines.forEach((m: any) => { medMap[m.id] = { name: m.name, unit_price: m.unit_price || 0 }; });
-
-    setMedicinesUsed(prescriptions.map((p: any) => ({
-      pres_id: p.pres_id,
-      name: medMap[p.medicine_id]?.name || "Unknown",
-      quantity: p.quantity,
-      notes: p.notes || "",
-      unit_price: medMap[p.medicine_id]?.unit_price || 0,
-    })));
+    setMedicinesUsed(prescriptions.map((p: any) => ({ pres_id: p.pres_id, name: medMap[p.medicine_id]?.name || "Unknown", quantity: p.quantity, notes: p.notes || "", unit_price: medMap[p.medicine_id]?.unit_price || 0 })));
   }, []);
 
-  useEffect(() => { if (authenticated) { fetchRooms(); fetchPatients(); fetchIpdMedicines(); } }, [authenticated]);
+  useEffect(() => {
+    if (user) { fetchRooms(); fetchPatients(); fetchIpdMedicines(); }
+  }, [user]);
 
   const openMedicinesModal = async (room: Room) => {
-    setSelectedRoom(room);
-    setCurrentIpdId(room.current_ipd_id);
-    setMedicinesUsed([]);
-    setShowMedicines(true);
+    setSelectedRoom(room); setCurrentIpdId(room.current_ipd_id); setMedicinesUsed([]); setShowMedicines(true);
     if (room.current_ipd_id) await fetchMedicinesUsed(room.current_ipd_id);
   };
 
   const assignRoom = async () => {
     if (!selectedRoom || !selectedPatient) return;
     setSaving(true);
-    const { data: ipd } = await supabase.from("ipd_record").insert({
-      patient_id: selectedPatient, doctor_id: 5,
-      admit_date: new Date().toISOString().split("T")[0],
-      room_number: selectedRoom.room_number, status: "admitted",
-    }).select("ipd_id").single();
+    const { data: ipd } = await supabase.from("ipd_record").insert({ patient_id: selectedPatient, doctor_id: 5, admit_date: new Date().toISOString().split("T")[0], room_number: selectedRoom.room_number, status: "admitted" }).select("ipd_id").single();
     if (ipd) {
-      await supabase.from("room").update({
-        is_occupied: true, current_patient_id: selectedPatient,
-        current_ipd_id: ipd.ipd_id,
-        admitted_on: new Date().toISOString().split("T")[0],
-      }).eq("room_id", selectedRoom.room_id);
-      await fetchRooms();
-      setShowAssign(false); setSelectedPatient(null); setPatientSearch("");
+      await supabase.from("room").update({ is_occupied: true, current_patient_id: selectedPatient, current_ipd_id: ipd.ipd_id, admitted_on: new Date().toISOString().split("T")[0] }).eq("room_id", selectedRoom.room_id);
+      await fetchRooms(); setShowAssign(false); setSelectedPatient(null); setPatientSearch("");
       alert(`Room ${selectedRoom.room_number} assigned successfully!`);
     }
     setSaving(false);
   };
 
   const getMedicinesForBill = async (ipdId: number) => {
-    const { data: prescriptions } = await supabase
-      .from("prescription")
-      .select("pres_id, quantity, notes, medicine_id")
-      .eq("ipd_id", ipdId);
-
+    const { data: prescriptions } = await supabase.from("prescription").select("pres_id, quantity, notes, medicine_id").eq("ipd_id", ipdId);
     if (!prescriptions || prescriptions.length === 0) return [];
-
     const medIds = [...new Set(prescriptions.map((p: any) => p.medicine_id))];
     const { data: medicines } = await supabase.from("medicine_list").select("id, name, unit_price").in("id", medIds);
     const medMap: Record<number, any> = {};
     if (medicines) medicines.forEach((m: any) => { medMap[m.id] = m; });
-
-    return prescriptions.map((p: any) => ({
-      name: medMap[p.medicine_id]?.name || "Unknown",
-      quantity: p.quantity,
-      notes: p.notes || "",
-      unit_price: medMap[p.medicine_id]?.unit_price || 0,
-    }));
+    return prescriptions.map((p: any) => ({ name: medMap[p.medicine_id]?.name || "Unknown", quantity: p.quantity, notes: p.notes || "", unit_price: medMap[p.medicine_id]?.unit_price || 0 }));
   };
 
   const calculateBill = async (room: Room) => {
@@ -311,25 +247,12 @@ export default function RoomsPage() {
     const ipdId = currentIpdId;
     if (!ipdId || !selectedMedId || saving) return;
     setSaving(true);
-    const { error } = await supabase.from("prescription").insert({
-      ipd_id: ipdId,
-      medicine_id: selectedMedId,
-      quantity: parseInt(medQty) || 1,
-      notes: medNotes || null,
-      prescribed_date: new Date().toISOString().split("T")[0],
-    });
-    if (!error) {
-      setMedSearch(""); setMedSuggestions([]);
-      setSelectedMedId(null); setSelectedMedName("");
-      setMedQty("1"); setMedNotes("");
-      await fetchMedicinesUsed(ipdId);
-    } else {
-      alert("Error: " + error.message);
-    }
+    const { error } = await supabase.from("prescription").insert({ ipd_id: ipdId, medicine_id: selectedMedId, quantity: parseInt(medQty) || 1, notes: medNotes || null, prescribed_date: new Date().toISOString().split("T")[0] });
+    if (!error) { setMedSearch(""); setMedSuggestions([]); setSelectedMedId(null); setSelectedMedName(""); setMedQty("1"); setMedNotes(""); await fetchMedicinesUsed(ipdId); }
+    else alert("Error: " + error.message);
     setSaving(false);
   };
 
-  // uses pres_id (correct primary key)
   const removeMedicine = async (presId: number) => {
     await supabase.from("prescription").delete().eq("pres_id", presId);
     if (currentIpdId) await fetchMedicinesUsed(currentIpdId);
@@ -340,56 +263,26 @@ export default function RoomsPage() {
     setSaving(true);
     await supabase.from("ipd_record").update({ status: "discharged", discharge_date: new Date().toISOString().split("T")[0] }).eq("ipd_id", selectedRoom.current_ipd_id);
     await supabase.from("discharge").insert({ ipd_id: selectedRoom.current_ipd_id, discharge_date: new Date().toISOString().split("T")[0], discharge_summary: "Patient discharged from room " + selectedRoom.room_number });
-    if (bill) {
-      await supabase.from("bill").insert({ patient_id: selectedRoom.current_patient_id, ipd_id: selectedRoom.current_ipd_id, ipd_charges: bill.roomCharges + bill.doctorCharges, pharmacy_charges: bill.pharmacyCharges, total_amount: bill.total, paid_status: "unpaid" });
-    }
+    if (bill) await supabase.from("bill").insert({ patient_id: selectedRoom.current_patient_id, ipd_id: selectedRoom.current_ipd_id, ipd_charges: bill.roomCharges + bill.doctorCharges, pharmacy_charges: bill.pharmacyCharges, total_amount: bill.total, paid_status: "unpaid" });
     await supabase.from("room").update({ is_occupied: false, current_patient_id: null, current_ipd_id: null, admitted_on: null }).eq("room_id", selectedRoom.room_id);
-    await fetchRooms();
-    setShowDischarge(false); setShowBill(false); setBill(null); setSelectedRoom(null); setCurrentIpdId(null);
+    await fetchRooms(); setShowDischarge(false); setShowBill(false); setBill(null); setSelectedRoom(null); setCurrentIpdId(null);
     alert("Patient discharged and bill generated!");
     setSaving(false);
   };
 
-  const filteredRooms = rooms.filter(r => {
-    if (filter === "available") return !r.is_occupied;
-    if (filter === "occupied") return r.is_occupied;
-    if (filter === "icu") return r.room_type === "ICU";
-    return true;
-  });
-
+  const filteredRooms = rooms.filter(r => { if (filter === "available") return !r.is_occupied; if (filter === "occupied") return r.is_occupied; if (filter === "icu") return r.room_type === "ICU"; return true; });
   const stats = { total: rooms.length, occupied: rooms.filter(r => r.is_occupied).length, available: rooms.filter(r => !r.is_occupied).length, icu: rooms.filter(r => r.room_type === "ICU" && r.is_occupied).length };
   const getRoomColor = (r: Room) => r.room_type === "ICU" ? (r.is_occupied ? "#fee2e2" : "#fef3c7") : (r.is_occupied ? "#fef2f2" : "#f0fdf4");
   const getRoomBorder = (r: Room) => r.room_type === "ICU" ? (r.is_occupied ? "#fca5a5" : "#fde68a") : (r.is_occupied ? "#fca5a5" : "#bbf7d0");
   const getDaysSince = (d: string) => Math.ceil((new Date().getTime() - new Date(d).getTime()) / (1000 * 60 * 60 * 24));
 
-  if (!authenticated) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#f0f4ff", fontFamily: "Georgia, serif", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ background: "white", borderRadius: "20px", padding: "48px 40px", width: "100%", maxWidth: "360px", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", textAlign: "center" }}>
-          <div style={{ width: "56px", height: "56px", background: "#0a2463", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "24px", margin: "0 auto 20px" }}>🛏️</div>
-          <h2 style={{ color: "#0a2463", fontSize: "20px", marginBottom: "8px" }}>Room Management</h2>
-          <p style={{ color: "#888", fontSize: "14px", marginBottom: "28px" }}>Reception access — Enter PIN</p>
-          <input type="password" placeholder="••••" value={pin} onChange={e => setPin(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") { if (pin === "1001") setAuthenticated(true); else alert("Wrong PIN!"); } }}
-            style={{ width: "100%", padding: "14px", borderRadius: "10px", border: "1.5px solid #e0e7ff", fontSize: "24px", textAlign: "center", letterSpacing: "8px", fontFamily: "Georgia, serif", boxSizing: "border-box", marginBottom: "16px" }} />
-          <button onClick={() => { if (pin === "1001") setAuthenticated(true); else alert("Wrong PIN!"); }}
-            style={{ width: "100%", padding: "14px", background: "#0a2463", color: "white", border: "none", borderRadius: "10px", fontSize: "16px", fontWeight: "700", cursor: "pointer" }}>
-            Enter →
-          </button>
-        </div>
-      </div>
-    );
+  if (authLoading || !user) {
+    return <div style={{ minHeight: "100vh", background: "#f0f4ff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", color: "#0a2463" }}>Loading…</div>;
   }
 
   return (
     <div style={{ minHeight: "100vh", background: "#f0f4ff", fontFamily: "Georgia, serif" }}>
-      <div style={{ background: "#0a2463", padding: "0 5%", height: "65px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ color: "white", fontWeight: "700", fontSize: "16px" }}>Room Management — Neel Orthopaedic</div>
-        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-          <Link href="/doctor" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: "13px" }}>Doctor Portal</Link>
-          <Link href="/" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: "13px" }}>← Website</Link>
-        </div>
-      </div>
+      <StaffNavbar user={user} onSignOut={signOut} />
 
       <div style={{ padding: "24px 5%" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
@@ -497,8 +390,7 @@ export default function RoomsPage() {
                         style={{ padding: "10px 16px", cursor: "pointer", fontSize: "13px", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between" }}
                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#f0f4ff"}
                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "white"}>
-                        <span>{m.name}</span>
-                        <span style={{ color: "#888", fontSize: "11px" }}>₹{m.unit_price || 0}</span>
+                        <span>{m.name}</span><span style={{ color: "#888", fontSize: "11px" }}>₹{m.unit_price || 0}</span>
                       </div>
                     ))}
                   </div>
@@ -522,9 +414,7 @@ export default function RoomsPage() {
               </button>
             </div>
             <div style={{ fontWeight: "600", fontSize: "13px", color: "#374151", marginBottom: "10px" }}>Medicines Given ({medicinesUsed.length})</div>
-            {medicinesUsed.length === 0 ? (
-              <div style={{ color: "#999", fontSize: "13px", textAlign: "center", padding: "20px" }}>No medicines added yet</div>
-            ) : (
+            {medicinesUsed.length === 0 ? <div style={{ color: "#999", fontSize: "13px", textAlign: "center", padding: "20px" }}>No medicines added yet</div> : (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
                 {medicinesUsed.map((m, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#f8f9fc", borderRadius: "8px", border: "1px solid #e8edf5" }}>
@@ -538,9 +428,7 @@ export default function RoomsPage() {
               </div>
             )}
             <button onClick={() => { setShowMedicines(false); setMedSearch(""); setMedSuggestions([]); setSelectedMedId(null); setSelectedMedName(""); setMedicinesUsed([]); }}
-              style={{ width: "100%", background: "#f0f4ff", color: "#0a2463", border: "none", padding: "12px", borderRadius: "10px", fontSize: "15px", fontWeight: "600", cursor: "pointer" }}>
-              Close
-            </button>
+              style={{ width: "100%", background: "#f0f4ff", color: "#0a2463", border: "none", padding: "12px", borderRadius: "10px", fontSize: "15px", fontWeight: "600", cursor: "pointer" }}>Close</button>
           </div>
         </div>
       )}

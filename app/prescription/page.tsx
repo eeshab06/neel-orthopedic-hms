@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/useAuth";
+import StaffNavbar from "@/components/StaffNavbar";
 
 interface Medicine { id: number; name: string; }
 interface Token {
@@ -119,8 +121,6 @@ function buildPrintHTML(pt: Token): string {
   </style>
 </head>
 <body>
-
-<!-- HEADER -->
 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
   <div>
     <div style="font-family:Georgia,serif;font-style:italic;font-size:22px;font-weight:bold;">Dr. G.K. Boob</div>
@@ -131,13 +131,10 @@ function buildPrintHTML(pt: Token): string {
   </div>
   <img src="${nabh}" alt="NABH" style="width:62px;height:62px;object-fit:contain;flex-shrink:0;" />
 </div>
-
 <hr/>
-
 <div style="text-align:center;font-weight:bold;font-size:12px;text-decoration:underline;margin:3px 0;">
   INITIAL ASSESSMENT SHEET FOR OPD PATIENTS &nbsp;&nbsp;&nbsp; Date: ${pt.date}
 </div>
-
 <div style="display:flex;gap:4px;margin-bottom:2px;align-items:baseline;font-size:11px;">
   <span style="font-weight:bold;">Name :</span>
   <span style="flex:1;border-bottom:1px solid ${C};">&nbsp;${pt.patient_name}</span>
@@ -148,7 +145,6 @@ function buildPrintHTML(pt: Token): string {
   <span style="font-weight:bold;">Sex :</span>
   <span style="margin-left:3px;">M &nbsp; F</span>
 </div>
-
 <div style="display:flex;gap:4px;margin-bottom:4px;align-items:baseline;font-size:11px;">
   <span style="font-weight:bold;">UHID No.</span>
   <span style="width:90px;border-bottom:1px solid ${C};"></span>
@@ -156,7 +152,6 @@ function buildPrintHTML(pt: Token): string {
   <span style="font-weight:bold;">Known Allergies</span>
   <span style="flex:1;border-bottom:1px solid ${C};">&nbsp;${pt.known_allergies||""}</span>
 </div>
-
 <div style="margin-bottom:2px;font-size:11px;">
   <span style="font-weight:bold;">Nutritional Status: </span>
   ${NUTRITIONAL.map(n=>`<span style="margin-right:12px;">${pcheck(ptNutri.includes(n))}${n}</span>`).join("")}
@@ -165,43 +160,32 @@ function buildPrintHTML(pt: Token): string {
   <span style="margin-right:3px;">${pcheck(false)}</span><span style="font-weight:bold;">KICIO: </span>
   ${COMORBIDITIES.map(c=>`<span style="margin-right:8px;">${pcheck(ptComor.includes(c))}${c}</span>`).join("")}
 </div>
-
 <hr/>
-
 <div style="margin-bottom:1px;font-size:11px;">
   <span style="font-weight:bold;">Chief Complaint: </span>
   <span style="border-bottom:1px solid ${C};display:inline-block;width:62%;">&nbsp;</span>
 </div>
 <div class="cgrid">${complaintGrid}</div>
-
 <hr style="margin-top:3px;"/>
-
 ${ptConds?`<div style="margin-bottom:2px;font-size:11px;"><span style="font-weight:bold;">Clinical Conditions: </span>${ptConds}</div>`:""}
-
 <div style="margin-bottom:1px;font-size:11px;">
   <span style="font-weight:bold;">Clinical findings: </span>
   <span style="border-bottom:1px solid ${C};display:inline-block;width:68%;">&nbsp;${ptFindings}</span>
 </div>
 <div style="border-bottom:1px solid ${C};min-height:13px;margin-bottom:1px;"></div>
 <div style="border-bottom:1px solid ${C};min-height:13px;margin-bottom:4px;"></div>
-
 <div style="margin-bottom:4px;font-size:11px;">
   <span style="font-weight:bold;">Final Diagnosis: </span>
   <span style="border-bottom:1px solid ${C};display:inline-block;width:72%;">&nbsp;${pt.diagnosis||""}</span>
 </div>
-
 <hr/>
-
 ${instrRows}
-
 <div style="margin-top:2px;margin-bottom:1px;font-size:11px;">
   <span style="font-weight:bold;">Physiotherapy: </span>
   <span style="border-bottom:1px solid ${C};display:inline-block;width:71%;">&nbsp;${ptPhysio.length>0?ptPhysio.join(", "):""}</span>
 </div>
 <div style="border-bottom:1px solid ${C};min-height:11px;margin-bottom:2px;"></div>
-
 <hr/>
-
 <table class="meds">
   <thead>
     <tr>
@@ -213,9 +197,7 @@ ${instrRows}
   </thead>
   <tbody>${medRows}</tbody>
 </table>
-
 <hr/>
-
 <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;font-size:11px;">
   <span style="font-weight:bold;">Follow up after : </span>
   ${followupChecks}
@@ -224,7 +206,6 @@ ${instrRows}
   <span style="font-weight:bold;">Next Visit</span>
   <span style="border:1px solid ${C};display:inline-block;padding:1px 6px;min-width:120px;font-size:10.5px;">${nextVisitStr}</span>
 </div>
-
 <div class="footer-wrap">
   <div class="fcol">
     <div style="border-left:2.5px solid ${C};padding-left:4px;">
@@ -244,15 +225,16 @@ ${instrRows}
   </div>
   <div class="sig">Dr. G.K. Boob</div>
 </div>
-
 </body>
 </html>`;
 }
 
 export default function PrescriptionPage() {
-  const [pin, setPin] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
-  const [role, setRole] = useState<"reception"|"doctor"|null>(null);
+  const { user, loading: authLoading, signOut } = useAuth("/prescription");
+
+  // Doctor role = "doctor", reception role = "reception"
+  const role = user?.role === "doctor" ? "doctor" : "reception";
+
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [tokens, setTokens] = useState<Token[]>([]);
   const [selectedToken, setSelectedToken] = useState<Token|null>(null);
@@ -278,15 +260,17 @@ export default function PrescriptionPage() {
   const [condSearch, setCondSearch] = useState("");
   const today = new Date().toISOString().split("T")[0];
 
-  useEffect(() => { if (authenticated) { fetchMedicines(); fetchTokens(); } }, [authenticated]);
+  useEffect(() => {
+    if (user) { fetchMedicines(); fetchTokens(); }
+  }, [user]);
 
   useEffect(() => {
-    if (!authenticated) return;
+    if (!user) return;
     const ch = supabase.channel("opd_rx")
       .on("postgres_changes",{event:"*",schema:"public",table:"opd_prescription"},fetchTokens)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [authenticated]);
+  }, [user]);
 
   const fetchMedicines = async () => {
     const {data} = await supabase.from("medicine_list").select("id,name").eq("type","opd").order("name");
@@ -393,7 +377,6 @@ export default function PrescriptionPage() {
     await fetchTokens(); setSaved(true); setSaving(false);
   };
 
-  // ── PRINT: auto-resize window to content, no blank space ──
   const handlePrint = () => {
     if (!selectedToken) return;
     const pw = window.open("","_blank","width=794,height=600,scrollbars=no");
@@ -406,7 +389,6 @@ export default function PrescriptionPage() {
       pw.resizeTo(794, contentH + 40);
       setTimeout(()=>{ pw.print(); pw.close(); }, 600);
     };
-    // fallback
     setTimeout(()=>{ try{ pw.print(); pw.close(); }catch(e){} }, 1800);
   };
 
@@ -423,37 +405,21 @@ export default function PrescriptionPage() {
     </div>
   );
 
-  if (!authenticated) {
+  if (authLoading || !user) {
     return (
-      <div style={{minHeight:"100vh",background:"#f0f4ff",fontFamily:"Georgia, serif",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
-        <div style={{background:"white",borderRadius:"20px",padding:"40px",width:"100%",maxWidth:"380px",boxShadow:"0 4px 24px rgba(0,0,0,0.08)",textAlign:"center"}}>
-          <div style={{fontSize:"32px",marginBottom:"16px"}}>📋</div>
-          <h2 style={{color:"#0a2463",fontSize:"22px",marginBottom:"8px"}}>OPD Prescription</h2>
-          <p style={{color:"#888",fontSize:"14px",marginBottom:"28px"}}>Select your role and enter PIN</p>
-          <div style={{display:"flex",gap:"10px",marginBottom:"20px"}}>
-            {(["reception","doctor"] as const).map(r=>(
-              <button key={r} onClick={()=>setRole(r)}
-                style={{flex:1,padding:"12px",borderRadius:"10px",border:"2px solid",borderColor:role===r?"#0a2463":"#e0e7ff",background:role===r?"#f0f4ff":"white",color:"#0a2463",fontWeight:"700",fontSize:"14px",cursor:"pointer",fontFamily:"Georgia, serif"}}>
-                {r==="reception"?"👩‍💼 Reception":"👨‍⚕️ Doctor"}
-              </button>
-            ))}
-          </div>
-          <input type="password" placeholder="••••" value={pin} onChange={e=>setPin(e.target.value)}
-            onKeyDown={e=>{if(e.key==="Enter"&&role){if(pin==="1001")setAuthenticated(true);else alert("Wrong PIN!");}}}
-            style={{width:"100%",padding:"14px",borderRadius:"10px",border:"1.5px solid #e0e7ff",fontSize:"24px",textAlign:"center",letterSpacing:"8px",fontFamily:"Georgia, serif",boxSizing:"border-box",marginBottom:"16px"}}/>
-          <button onClick={()=>{if(!role){alert("Select a role first!");return;}if(pin==="1001")setAuthenticated(true);else alert("Wrong PIN!");}}
-            style={{width:"100%",padding:"14px",background:"#0a2463",color:"white",border:"none",borderRadius:"10px",fontSize:"16px",fontWeight:"700",cursor:"pointer",fontFamily:"Georgia, serif"}}>
-            Enter →
-          </button>
-        </div>
+      <div style={{minHeight:"100vh",background:"#f0f4ff",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Georgia, serif",color:"#0a2463"}}>
+        Loading…
       </div>
     );
   }
 
   return (
     <div style={{minHeight:"100vh",background:"#f0f4ff",fontFamily:"Georgia, serif"}}>
-      <div style={{background:"#0a2463",padding:"0 5%",height:"65px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{color:"white",fontWeight:"700",fontSize:"16px"}}>
+      <StaffNavbar user={user} onSignOut={signOut} />
+
+      {/* Sub-header with action buttons */}
+      <div style={{background:"#0a2463",padding:"0 5%",height:"52px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{color:"white",fontWeight:"700",fontSize:"15px"}}>
           {role==="reception"?"👩‍💼 Reception — Patient Entry":"👨‍⚕️ Dr. G.K. Boob — Prescription"}
         </div>
         <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
@@ -475,14 +441,11 @@ export default function PrescriptionPage() {
               {saving?"Saving...":saved?"✓ Sent to Doctor":editingTokenId?"Update →":"Send to Doctor →"}
             </button>
           )}
-          <button onClick={()=>{setAuthenticated(false);setRole(null);setPin("");setSaved(false);setSelectedToken(null);}}
-            style={{background:"rgba(255,255,255,0.15)",color:"white",border:"none",padding:"8px 16px",borderRadius:"8px",fontSize:"13px",cursor:"pointer",fontFamily:"Georgia, serif"}}>
-            Logout
-          </button>
         </div>
       </div>
 
       <div style={{padding:"24px 5%",display:"grid",gridTemplateColumns:"280px 1fr",gap:"24px",maxWidth:"1200px",margin:"0 auto"}}>
+        {/* Sidebar */}
         <div style={{background:"white",borderRadius:"16px",padding:"20px",boxShadow:"0 2px 8px rgba(0,0,0,0.05)",height:"fit-content",position:"sticky",top:"24px"}}>
           <div style={{fontWeight:"700",color:"#0a2463",fontSize:"15px",marginBottom:"4px"}}>
             {role==="doctor"?"Today's Patients":"Today's Tokens"}
@@ -529,6 +492,7 @@ export default function PrescriptionPage() {
           )}
         </div>
 
+        {/* Main content */}
         <div>
           {role==="reception"&&(
             <div>

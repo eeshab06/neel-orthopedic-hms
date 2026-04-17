@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
+import { useAuth } from "@/lib/useAuth";
+import StaffNavbar from "@/components/StaffNavbar";
 
 interface Appointment {
   appt_id: number;
@@ -19,15 +20,14 @@ interface Holiday {
 }
 
 export default function DoctorPortal() {
-  // ── ALL HOOKS FIRST ──────────────────────────────────────
-  const [pin, setPin] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
+  const { user, loading: authLoading, signOut } = useAuth("/doctor");
   const [tab, setTab] = useState<"today" | "holidays" | "surgery">("today");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
   const [newHoliday, setNewHoliday] = useState({ from_date: "", to_date: "", reason: "" });
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
   const today = new Date().toISOString().split("T")[0];
 
   const fetchAppointments = async () => {
@@ -52,11 +52,21 @@ export default function DoctorPortal() {
   };
 
   useEffect(() => {
-    if (authenticated) {
-      fetchAppointments();
-      fetchHolidays();
-    }
-  }, [authenticated]);
+    if (!user) return;
+
+    fetchAppointments();
+    fetchHolidays();
+
+    // Real-time: auto-update when new bookings come in
+    const channel = supabase
+      .channel("doctor_appointments_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "appointment" }, () => {
+        fetchAppointments();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   const addHoliday = async () => {
     if (!newHoliday.from_date || !newHoliday.to_date || !newHoliday.reason) return;
@@ -94,52 +104,24 @@ export default function DoctorPortal() {
     return Math.floor((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365));
   };
 
-  // ── PIN SCREEN (after all hooks) ─────────────────────────
-  if (!authenticated) {
+  const filteredAppointments = appointments.filter(a => {
+    const q = search.toLowerCase();
+    if (!q) return true;
+    const p = a.patient as any;
+    return p?.name?.toLowerCase().includes(q) || String(a.token_number).includes(q);
+  });
+
+  if (authLoading || !user) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f0f4ff", fontFamily: "Georgia, serif", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ background: "white", borderRadius: "20px", padding: "48px 40px", width: "100%", maxWidth: "360px", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", textAlign: "center" }}>
-          <div style={{ width: "56px", height: "56px", background: "#0a2463", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "24px", fontWeight: "800", margin: "0 auto 20px" }}>N</div>
-          <h2 style={{ color: "#0a2463", fontSize: "20px", marginBottom: "8px" }}>Doctor Portal</h2>
-          <p style={{ color: "#888", fontSize: "14px", marginBottom: "28px" }}>Enter your PIN to continue</p>
-          <input
-            type="password"
-            placeholder="••••"
-            value={pin}
-            onChange={e => setPin(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === "Enter") {
-                if (pin === "1001") setAuthenticated(true);
-                else alert("Wrong PIN!");
-              }
-            }}
-            style={{ width: "100%", padding: "14px", borderRadius: "10px", border: "1.5px solid #e0e7ff", fontSize: "24px", textAlign: "center", letterSpacing: "8px", fontFamily: "Georgia, serif", boxSizing: "border-box", marginBottom: "16px" }}
-          />
-          <button
-            onClick={() => { if (pin === "1001") setAuthenticated(true); else alert("Wrong PIN!"); }}
-            style={{ width: "100%", padding: "14px", background: "#0a2463", color: "white", border: "none", borderRadius: "10px", fontSize: "16px", fontWeight: "700", cursor: "pointer" }}
-          >Enter →</button>
-        </div>
+      <div style={{ minHeight: "100vh", background: "#f0f4ff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif", color: "#0a2463" }}>
+        Loading…
       </div>
     );
   }
 
-  // ── MAIN PORTAL ──────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", background: "#f0f4ff", fontFamily: "Georgia, serif" }}>
-
-      <div style={{ background: "#0a2463", padding: "0 5%", height: "65px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ color: "white", fontWeight: "700", fontSize: "16px" }}>Dr. G.K. Boob — Doctor Portal</div>
-          <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "12px" }}>
-            {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-          <Link href="/token" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: "13px" }}>Reception Screen</Link>
-          <Link href="/" style={{ color: "rgba(255,255,255,0.6)", textDecoration: "none", fontSize: "13px" }}>← Website</Link>
-        </div>
-      </div>
+      <StaffNavbar user={user} onSignOut={signOut} />
 
       <div style={{ padding: "24px 5% 0" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
@@ -171,21 +153,24 @@ export default function DoctorPortal() {
 
         {tab === "today" && (
           <div style={{ background: "white", borderRadius: "16px", padding: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+            <input type="text" placeholder="🔍  Search by name or token..."
+              value={search} onChange={e => setSearch(e.target.value)}
+              style={{ width: "100%", padding: "10px 16px", border: "1.5px solid #e0e7ff", borderRadius: 8, fontSize: 14, outline: "none", fontFamily: "Georgia, serif", boxSizing: "border-box", marginBottom: 16 }} />
             {loading ? (
               <div style={{ textAlign: "center", padding: "60px", color: "#666" }}>Loading...</div>
-            ) : appointments.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "60px", color: "#999" }}>No appointments today</div>
+            ) : filteredAppointments.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px", color: "#999" }}>No appointments found</div>
             ) : (
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: "2px solid #f0f4ff" }}>
-                    {["Token", "Patient Name", "Age", "Phone", "Session", "Status"].map(h => (
+                    {["Token", "Patient Name", "Age", "Phone", "Session", "Status", "Action"].map(h => (
                       <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "12px", fontWeight: "700", color: "#888", letterSpacing: "0.5px" }}>{h.toUpperCase()}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {appointments.map((a, i) => (
+                  {filteredAppointments.map((a, i) => (
                     <tr key={a.appt_id} style={{ borderBottom: "1px solid #f8f9fc", background: i % 2 === 0 ? "white" : "#fafbff" }}>
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ width: "36px", height: "36px", background: "#0a2463", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "800", fontSize: "14px" }}>{a.token_number}</div>
@@ -202,6 +187,12 @@ export default function DoctorPortal() {
                         }}>
                           {a.status === "booked" ? "Waiting" : a.status === "checked_in" ? "In Progress" : "Completed"}
                         </span>
+                      </td>
+                      <td style={{ padding: "14px 16px" }}>
+                        <button onClick={() => { setTab("surgery"); }}
+                          style={{ background: "#0a2463", color: "#fff", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 12, cursor: "pointer", fontFamily: "Georgia, serif", whiteSpace: "nowrap" }}>
+                          🔬 Surgery
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -229,14 +220,13 @@ export default function DoctorPortal() {
                 </div>
               ))}
               <div style={{ background: "#fff8e1", borderRadius: "8px", padding: "12px 16px", marginBottom: "16px", fontSize: "13px", color: "#795548" }}>
-                ⚠️ This will block all slots for selected dates. Patients will see "Doctor not available".
+                ⚠️ This will block all slots for selected dates.
               </div>
               <button onClick={addHoliday} disabled={saving || !newHoliday.from_date || !newHoliday.to_date || !newHoliday.reason}
                 style={{ width: "100%", padding: "12px", background: saving ? "#94a3b8" : "#0a2463", color: "white", border: "none", borderRadius: "8px", fontSize: "15px", fontWeight: "700", cursor: saving ? "not-allowed" : "pointer" }}>
                 {saving ? "Saving..." : "Mark as Holiday"}
               </button>
             </div>
-
             <div style={{ background: "white", borderRadius: "16px", padding: "28px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
               <h3 style={{ color: "#0a2463", fontSize: "18px", marginBottom: "20px" }}>Upcoming Holidays</h3>
               {holidays.length === 0 ? (
@@ -266,9 +256,12 @@ export default function DoctorPortal() {
         {tab === "surgery" && (
           <div style={{ background: "white", borderRadius: "16px", padding: "28px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
             <div style={{ textAlign: "center", padding: "60px", color: "#999" }}>
-              <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔧</div>
+              <div style={{ fontSize: "48px", marginBottom: "16px" }}>🔬</div>
               <div style={{ fontSize: "18px", fontWeight: "700", color: "#0a2463", marginBottom: "8px" }}>Surgery Schedule</div>
-              <div style={{ fontSize: "14px" }}>Coming soon — Kamya's module</div>
+              <div style={{ fontSize: "14px" }}>Use the IPD page to schedule and manage surgeries</div>
+              <a href="/ipd" style={{ display: "inline-block", marginTop: "16px", background: "#0a2463", color: "white", padding: "10px 24px", borderRadius: "8px", textDecoration: "none", fontSize: "14px", fontWeight: "600" }}>
+                Go to IPD & Surgery →
+              </a>
             </div>
           </div>
         )}
