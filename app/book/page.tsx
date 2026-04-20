@@ -1,369 +1,546 @@
 "use client";
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import PublicNavbar from "@/components/PublicNavbar";
 
-export default function Home() {
-  const [scrollY, setScrollY] = useState(0);
-  const [activeService, setActiveService] = useState(0);
-  const heroRef = useRef<HTMLDivElement>(null);
+interface Slot {
+  slot_id: number; slot_date: string; start_time: string;
+  end_time: string; is_available: boolean; token_number: number;
+}
+interface BookingResult {
+  token_number: number; slot_date: string; start_time: string;
+  end_time: string; session: string; patient_name: string; phone: string; appt_id: number;
+}
+interface DateAvailability { [date: string]: { morning: number; evening: number }; }
+interface Holiday { from_date: string; to_date: string; reason: string; }
+
+function formatTime(t: string) {
+  const [h, m] = t.split(":");
+  const hour = parseInt(h);
+  return `${hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? "PM" : "AM"}`;
+}
+function formatDate(d: string) {
+  return new Date(d).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}
+function getTodayString() { return new Date().toISOString().split("T")[0]; }
+
+// Get current IST time in minutes since midnight
+function getISTMinutes() {
+  const now = new Date();
+  const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+  return ist.getUTCHours() * 60 + ist.getUTCMinutes();
+}
+
+// Can still book morning? Allow until session ends at 1:15 PM IST
+function canBookMorning() {
+  return getISTMinutes() < 13 * 60 + 15;
+}
+
+// Morning session fully over at 1:15 PM IST — hide remaining count after this
+function isMorningSessionOver() {
+  return getISTMinutes() >= 13 * 60 + 15;
+}
+
+// Can still book evening? Allow until session ends at 6:45 PM IST
+function canBookEvening() {
+  return getISTMinutes() < 18 * 60 + 45;
+}
+
+// Evening session fully over at 6:45 PM IST
+function isEveningSessionOver() {
+  return getISTMinutes() >= 18 * 60 + 45;
+}
+
+// Skip today entirely only if both sessions are fully over
+function getNext30Days() {
+  const days = [];
+  const bothOver = isEveningSessionOver();
+  for (let i = 0; i < 30; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    if (i === 0 && bothOver) continue;
+    days.push(d.toISOString().split("T")[0]);
+  }
+  return days;
+}
+
+function QRCode({ data, size = 200 }: { data: string; size?: number }) {
+  const url = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}&bgcolor=ffffff&color=0a1628&margin=10`;
+  return <img src={url} alt="QR Code" width={size} height={size} style={{ borderRadius: 12 }} />;
+}
+
+async function fetchSlotsWithRealAvailability(date: string, sess: "morning" | "evening"): Promise<Slot[]> {
+  const { data: slotData } = await supabase.from("slot").select("*").eq("slot_date", date).eq("doctor_id", 5).order("token_number", { ascending: true });
+  if (!slotData || slotData.length === 0) return [];
+  const { data: apptData } = await supabase.from("appointment").select("slot_id").neq("status", "cancelled").in("slot_id", slotData.map((s: any) => s.slot_id));
+  const bookedSlotIds = new Set((apptData || []).map((a: any) => a.slot_id));
+
+  // Get current IST time
+  const now = new Date();
+  const ist = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+  const currentMins = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+  const todayIST = ist.toISOString().split("T")[0];
+  const isToday = date === todayIST;
+
+  return slotData.filter((s: any) => {
+    if (sess === "morning") return s.token_number <= 72;
+    if (sess === "evening") return s.token_number > 72;
+    return true;
+  }).map((s: any) => {
+    // For today's slots, mark past slots as unavailable
+    let isPast = false;
+    if (isToday && s.start_time) {
+      const [h, m] = s.start_time.split(":").map(Number);
+      const slotMins = h * 60 + m;
+      isPast = slotMins < currentMins;
+    }
+    return {
+      ...s,
+      is_available: s.is_available && !bookedSlotIds.has(s.slot_id) && !isPast,
+    };
+  });
+}
+
+export default function BookPage() {
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [nameError, setNameError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [session, setSession] = useState<"morning" | "evening" | "">("");
+  const [dateAvailability, setDateAvailability] = useState<DateAvailability>({});
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [booking, setBooking] = useState<BookingResult | null>(null);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState("");
+
+  const days = getNext30Days();
+  const isSunday = (d: string) => new Date(d).getDay() === 0;
+  const today = getTodayString();
+
+  const getHolidayReason = (date: string): string | null => {
+    const h = holidays.find(h => date >= h.from_date && date <= h.to_date);
+    return h ? h.reason : null;
+  };
 
   useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    if (step !== 2) return;
+    const fetchAvailability = async () => {
+      setLoadingAvailability(true);
+      const [availRes, holidayRes] = await Promise.all([
+        supabase.rpc("get_slot_availability", { start_date: days[0], end_date: days[days.length - 1] }),
+        supabase.from("doctor_holiday").select("from_date, to_date, reason").eq("doctor_id", 5),
+      ]);
+      if (!availRes.error && availRes.data) {
+        const avail: DateAvailability = {};
+        for (const row of availRes.data) {
+          avail[row.slot_date] = { morning: row.morning_available, evening: row.evening_available };
+        }
+        setDateAvailability(avail);
+      }
+      if (!holidayRes.error && holidayRes.data) setHolidays(holidayRes.data as Holiday[]);
+      setLoadingAvailability(false);
+    };
+    fetchAvailability();
+  }, [step]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveService(prev => (prev + 1) % services.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  const validateStep1 = () => {
+    let valid = true;
+    setNameError(""); setPhoneError("");
+    if (!name.trim()) { setNameError("Please enter your full name."); valid = false; }
+    if (!phone.trim() || !/^\d{10}$/.test(phone.trim())) { setPhoneError("Please enter a valid 10-digit phone number."); valid = false; }
+    if (valid) setStep(2);
+  };
 
-  const services = [
-    { title: "Robotic Knee Replacement", sub: "VELYS™ by Johnson & Johnson", icon: "⟡" },
-    { title: "Total Hip Replacement", sub: "Minimally invasive technique", icon: "⟡" },
-    { title: "Spine Surgery", sub: "Fellowship trained, Germany", icon: "⟡" },
-    { title: "Arthroscopic Surgery", sub: "Knee & shoulder injuries", icon: "⟡" },
-    { title: "Trauma & Reconstruction", sub: "Emergency & elective care", icon: "⟡" },
-  ];
+  const validateStep2 = async () => {
+    if (!selectedDate || !session) return;
+    setLoadingSlots(true);
+    const loaded = await fetchSlotsWithRealAvailability(selectedDate, session as "morning" | "evening");
+    setSlots(loaded); setSelectedSlot(null); setLoadingSlots(false); setStep(3);
+  };
 
-  const stats = [
-    { n: "200+", label: "Patients daily" },
-    { n: "72", label: "Online slots/session" },
-    { n: "15+", label: "Years experience" },
-    { n: "24/7", label: "Emergency care" },
-  ];
+  const handleBook = async () => {
+    if (!selectedSlot || !name || !phone) return;
+    setBookingLoading(true); setBookingError("");
+    let patientId: number | null = null;
+    const { data: existing } = await supabase.from("patient").select("patient_id").eq("phone", phone.trim()).single();
+    if (existing) { patientId = existing.patient_id; }
+    else {
+      const { data: newPatient } = await supabase.from("patient").insert({ name: name.trim().toUpperCase(), phone: phone.trim() }).select("patient_id").single();
+      if (newPatient) patientId = newPatient.patient_id;
+    }
+    if (!patientId) { setBookingError("Failed to register patient. Please try again."); setBookingLoading(false); return; }
+    const { data: existing_appt } = await supabase.from("appointment").select("appt_id").eq("slot_id", selectedSlot.slot_id).neq("status", "cancelled").single();
+    if (existing_appt) {
+      setBookingError("This slot was just taken! Please select another.");
+      setBookingLoading(false);
+      const fresh = await fetchSlotsWithRealAvailability(selectedSlot.slot_date, session as "morning" | "evening");
+      setSlots(fresh); setSelectedSlot(null); return;
+    }
+    const { data: appt, error } = await supabase.from("appointment").insert({
+      patient_id: patientId, doctor_id: 5, slot_id: selectedSlot.slot_id,
+      token_number: selectedSlot.token_number, status: "booked",
+    }).select("appt_id").single();
+    if (error || !appt) { setBookingError("Booking failed: " + (error?.message || "Unknown error")); setBookingLoading(false); return; }
+    await supabase.from("slot").update({ is_available: false }).eq("slot_id", selectedSlot.slot_id);
+    setBooking({
+      token_number: selectedSlot.token_number, slot_date: selectedSlot.slot_date,
+      start_time: selectedSlot.start_time, end_time: selectedSlot.end_time,
+      session, patient_name: name.trim().toUpperCase(), phone: phone.trim(), appt_id: appt.appt_id,
+    });
+    setStep(4); setBookingLoading(false);
+  };
 
-  const team = [
-    { name: "Dr. G.K. Boob", role: "Orthopaedic Surgeon", qual: "DNB Ortho | Fellowship Spine Surgery, Germany", time: "Mon–Sat: 10am–1:15pm & 3:30–6:45pm | Sun: 10am–1pm only" },
-    { name: "Dr. Vijay Rangani", role: "Anaesthetist", qual: "MBBS / DA", time: "Pre-anaesthetic checkup & anaesthesia" },
-    { name: "Dr. Jay Pathak", role: "Physiotherapist", qual: "B.PTH", time: "Post-surgical rehabilitation" },
-    { name: "Dr. Chetan Bhambure", role: "Physician & Cardiologist", qual: "DM Cardiology", time: "9am–10am | Pre-surgery fitness" },
-  ];
+  const qrData = booking ? `NEEL-OPD|TOKEN:${booking.token_number}|DATE:${booking.slot_date}|NAME:${booking.patient_name}|PHONE:${booking.phone}|APPT:${booking.appt_id}` : "";
+  const inp: React.CSSProperties = { width: "100%", padding: "13px 16px", border: "1.5px solid #e0e7ff", borderRadius: "10px", fontSize: "16px", outline: "none", fontFamily: "'Inter', sans-serif", boxSizing: "border-box", background: "#fff", color: "#030a1e", transition: "border-color 0.2s" };
+  const getSessionAvailability = (date: string, sess: "morning" | "evening") => dateAvailability[date]?.[sess] ?? null;
 
-  const rooms = [
-    { type: "AC Economy Ward", rooms: "1101–1104", beds: 4 },
-    { type: "Single AC Deluxe", rooms: "1105, 2101, 2102, 2107", beds: 4 },
-    { type: "Twin Sharing AC", rooms: "2103–2106", beds: 4 },
-    { type: "ICU", rooms: "Critical care", beds: 3 },
-  ];
+  const getDateBadge = (date: string) => {
+    // Holiday always wins
+    const reason = getHolidayReason(date);
+    if (reason) return { text: "🚫", color: "#dc2626", bg: "#fee2e2", isHoliday: true };
 
-  const navScrolled = scrollY > 60;
+    const avail = dateAvailability[date];
+    if (!avail) return null;
+
+    const sun = isSunday(date);
+    const isToday = date === today;
+
+    let morningCount = avail.morning;
+    let eveningCount = avail.evening;
+
+    if (isToday) {
+      // Only zero out a session's count AFTER the session is fully over
+      // Morning session ends at 1:15 PM IST
+      if (isMorningSessionOver()) morningCount = 0;
+      // Evening session ends at 6:45 PM IST
+      if (isEveningSessionOver()) eveningCount = 0;
+    }
+
+    const total = sun ? morningCount : morningCount + eveningCount;
+
+    // Show Full only if genuinely 0 slots remain (all booked OR sessions over)
+    if (total === 0) return { text: "Full", color: "#dc2626", bg: "#fee2e2", isHoliday: false };
+    if (total <= 10) return { text: `${total} left`, color: "#d97706", bg: "#fef3c7", isHoliday: false };
+    return null;
+  };
 
   return (
-    <div style={{ background: "#fff", fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", overflowX: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "#f0f4ff", fontFamily: "Georgia, serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=DM+Serif+Display:ital@0;1&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        ::selection { background: #0066ff22; }
-        .nav-link { color: #111; text-decoration: none; font-size: 14px; font-weight: 500; letter-spacing: -0.2px; transition: color 0.2s; position: relative; }
-        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 1.5px; background: #0066ff; transition: width 0.25s; }
-        .nav-link:hover { color: #0066ff; }
-        .nav-link:hover::after { width: 100%; }
-        .stat-card { border: 1px solid #e8e8e8; border-radius: 16px; padding: 28px 24px; transition: all 0.3s; cursor: default; }
-        .stat-card:hover { border-color: #0066ff; transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,102,255,0.08); }
-        .service-pill { padding: 10px 20px; border-radius: 100px; border: 1.5px solid #e8e8e8; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.25s; background: white; color: #333; }
-        .service-pill:hover, .service-pill.active { background: #0066ff; border-color: #0066ff; color: white; }
-        .team-card { border: 1px solid #f0f0f0; border-radius: 20px; padding: 28px; transition: all 0.3s; }
-        .team-card:hover { border-color: #0066ff22; box-shadow: 0 16px 48px rgba(0,102,255,0.08); transform: translateY(-2px); }
-        .room-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #f5f5f5; }
-        .room-row:last-child { border-bottom: none; }
-        .book-btn { background: #0066ff; color: white; padding: 14px 32px; border-radius: 100px; font-size: 15px; font-weight: 600; text-decoration: none; transition: all 0.25s; display: inline-block; letter-spacing: -0.2px; }
-        .book-btn:hover { background: #0052cc; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,102,255,0.3); }
-        .outline-btn { background: transparent; color: #111; padding: 14px 32px; border-radius: 100px; font-size: 15px; font-weight: 500; text-decoration: none; transition: all 0.25s; display: inline-block; border: 1.5px solid #e0e0e0; letter-spacing: -0.2px; }
-        .outline-btn:hover { border-color: #0066ff; color: #0066ff; }
-        .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: #f0f5ff; border: 1px solid #ddeaff; color: #0066ff; padding: 8px 16px; border-radius: 100px; font-size: 13px; font-weight: 500; margin-bottom: 32px; }
-        .dot { width: 6px; height: 6px; border-radius: 50%; background: #0066ff; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .grid-bg { position: absolute; inset: 0; background-image: linear-gradient(rgba(0,102,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,102,255,0.04) 1px, transparent 1px); background-size: 48px 48px; }
-        .fade-in { animation: fadeIn 0.8s ease forwards; opacity: 0; }
-        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } from { opacity: 0; transform: translateY(20px); } }
-        .section-label { font-size: 12px; font-weight: 600; letter-spacing: 2px; color: #0066ff; text-transform: uppercase; margin-bottom: 12px; }
-        .section-title { font-family: 'DM Serif Display', serif; font-size: clamp(32px, 4vw, 48px); color: #0a0a0a; line-height: 1.15; letter-spacing: -1px; margin-bottom: 16px; }
-        .section-sub { font-size: 17px; color: #666; line-height: 1.7; max-width: 520px; font-weight: 300; }
-        .feature-chip { display: inline-flex; align-items: center; gap: 6px; background: #f8f8f8; border: 1px solid #efefef; border-radius: 100px; padding: 6px 14px; font-size: 13px; color: #444; font-weight: 500; }
-        .cta-section { background: #0a0a0a; border-radius: 32px; padding: 80px 60px; position: relative; overflow: hidden; }
-        .cta-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(0,102,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,102,255,0.08) 1px, transparent 1px); background-size: 48px 48px; }
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+        .display-font { font-family: 'Playfair Display', Georgia, serif !important; }
+        .body-font { font-family: 'Inter', sans-serif !important; }
+        input, select, textarea { color: #030a1e !important; font-size: 16px !important; }
+        input::placeholder, textarea::placeholder { color: #9ca3af !important; }
+        input:focus, select:focus { border-color: #1a56db !important; box-shadow: 0 0 0 3px rgba(26,86,219,0.08) !important; outline: none !important; }
       `}</style>
+      <PublicNavbar />
 
-      {/* ── NAVBAR ── */}
-      <nav style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        padding: "0 5%", height: "68px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: navScrolled ? "rgba(255,255,255,0.92)" : "white",
-        backdropFilter: navScrolled ? "blur(20px)" : "none",
-        borderBottom: navScrolled ? "1px solid #f0f0f0" : "1px solid transparent",
-        transition: "all 0.3s"
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{ width: "36px", height: "36px", background: "#0066ff", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "700", fontSize: "16px", fontFamily: "'DM Serif Display', serif" }}>N</div>
-          <div>
-            <div style={{ fontWeight: "700", fontSize: "14px", color: "#0a0a0a", letterSpacing: "-0.3px" }}>Neel Orthopaedic</div>
-            <div style={{ fontSize: "10px", color: "#999", letterSpacing: "1.5px", fontWeight: "500" }}>MULTISPECIALITY HOSPITAL</div>
-          </div>
+      {/* HERO */}
+      <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2f6e 50%, #0f4c8a 100%)", padding: "56px 5% 44px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: "-80px", right: "-80px", width: "300px", height: "300px", borderRadius: "50%", background: "radial-gradient(circle, rgba(96,165,250,0.1) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div className="body-font" style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#93c5fd", padding: "8px 20px", borderRadius: "30px", fontSize: "12px", letterSpacing: "2.5px", marginBottom: "20px", fontWeight: "600" }}>
+          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#34d399", display: "inline-block", boxShadow: "0 0 8px #34d399" }} />
+          NEEL ORTHOPAEDIC MULTISPECIALITY HOSPITAL
         </div>
-        <div style={{ display: "flex", gap: "28px", alignItems: "center" }}>
-          {["Services", "Doctors", "Rooms", "Contact"].map(item => (
-            <a key={item} href={`#${item.toLowerCase()}`} className="nav-link">{item}</a>
+        <h1 className="display-font" style={{ color: "white", fontSize: "clamp(28px, 4vw, 52px)", fontWeight: "900", marginBottom: "12px", letterSpacing: "-1.5px" }}>Book OPD Appointment</h1>
+        <p className="body-font" style={{ color: "rgba(255,255,255,0.65)", fontSize: "18px" }}>Get your token instantly. No waiting at the registration desk.</p>
+      </div>
+
+      {/* PROGRESS */}
+      <div style={{ background: "#0a1628", padding: "0 5% 24px" }}>
+        <div style={{ maxWidth: 620, margin: "0 auto", display: "flex" }}>
+          {[{ n: 1, label: "Your Details" }, { n: 2, label: "Date & Session" }, { n: 3, label: "Select Slot" }, { n: 4, label: "Confirmation" }].map((s, i) => (
+            <div key={s.n} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+              {i < 3 && <div style={{ position: "absolute", top: 16, left: "50%", right: "-50%", height: "2px", background: step > s.n ? "#1a56db" : "rgba(255,255,255,0.15)", zIndex: 0 }} />}
+              <div className="body-font" style={{ width: 34, height: 34, borderRadius: "50%", background: step >= s.n ? "linear-gradient(135deg, #1a56db, #60a5fa)" : "rgba(255,255,255,0.1)", border: step >= s.n ? "none" : "2px solid rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 14, fontWeight: 700, zIndex: 1, marginBottom: 8, boxShadow: step >= s.n ? "0 4px 12px rgba(26,86,219,0.4)" : "none" }}>
+                {step > s.n ? "✓" : s.n}
+              </div>
+              <div className="body-font" style={{ color: step >= s.n ? "white" : "rgba(255,255,255,0.35)", fontSize: 11, fontWeight: step === s.n ? 700 : 400, textAlign: "center" }}>{s.label}</div>
+            </div>
           ))}
-          <Link href="/book" className="book-btn" style={{ padding: "10px 22px", fontSize: "14px" }}>Book OPD</Link>
         </div>
-      </nav>
+      </div>
 
-      {/* ── HERO ── */}
-      <section ref={heroRef} style={{ minHeight: "100vh", display: "flex", alignItems: "center", padding: "100px 5% 80px", position: "relative" }}>
-        <div className="grid-bg" />
-        <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center" }}>
-          <div className="fade-in" style={{ animationDelay: "0.1s" }}>
-            <div className="hero-badge">
-              <span className="dot" />
-              Bhayander East, Mumbai — Est. 2009
+      <div style={{ maxWidth: 620, margin: "32px auto", padding: "0 20px 80px" }}>
+
+        {/* STEP 1 */}
+        {step === 1 && (
+          <div style={{ background: "white", borderRadius: "20px", padding: "40px", boxShadow: "0 4px 24px rgba(10,36,99,0.08)", border: "1px solid #e8edf5" }}>
+            <h2 className="display-font" style={{ color: "#030a1e", fontSize: "26px", fontWeight: "900", marginBottom: "8px", letterSpacing: "-0.5px" }}>Your Details</h2>
+            <p className="body-font" style={{ color: "#9ca3af", fontSize: "15px", marginBottom: "32px" }}>We'll use this to identify your appointment at the hospital.</p>
+            <div style={{ marginBottom: "20px" }}>
+              <label className="body-font" style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#374151", marginBottom: "8px" }}>Full Name *</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Rahul Sharma" style={inp} />
+              {nameError && <p className="body-font" style={{ color: "#dc2626", fontSize: "13px", marginTop: "6px" }}>{nameError}</p>}
             </div>
-            <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(40px, 5.5vw, 68px)", color: "#0a0a0a", lineHeight: "1.08", letterSpacing: "-2px", marginBottom: "24px" }}>
-              Advanced<br />
-              <span style={{ color: "#0066ff" }}>Orthopaedic</span><br />
-              Care.
-            </h1>
-            <p style={{ fontSize: "18px", color: "#555", lineHeight: "1.75", marginBottom: "16px", fontWeight: "300", maxWidth: "440px" }}>
-              Home to Mumbai's first <strong style={{ color: "#0a0a0a", fontWeight: "600" }}>VELYS™ Robotic Knee Replacement</strong> system. Where technology meets precision surgery.
-            </p>
-            <p style={{ fontSize: "15px", color: "#888", fontStyle: "italic", marginBottom: "36px" }}>— pain to painless —</p>
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginBottom: "40px" }}>
-              <Link href="/book" className="book-btn">Book Appointment →</Link>
-              <a href="tel:+917021094941" className="outline-btn">+91 70210 94941</a>
+            <div style={{ marginBottom: "32px" }}>
+              <label className="body-font" style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#374151", marginBottom: "8px" }}>Mobile Number *</label>
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10-digit mobile number" style={inp} />
+              {phoneError && <p className="body-font" style={{ color: "#dc2626", fontSize: "13px", marginTop: "6px" }}>{phoneError}</p>}
+              <p className="body-font" style={{ color: "#9ca3af", fontSize: "13px", marginTop: "6px" }}>Your token QR code will be shown on screen after booking.</p>
             </div>
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              {["VELYS™ Robotic System", "Cashless Mediclaim", "Digital Prescriptions", "24/7 Emergency"].map(f => (
-                <span key={f} className="feature-chip">
-                  <span style={{ color: "#0066ff", fontSize: "10px" }}>●</span> {f}
-                </span>
+            <button onClick={validateStep1} className="body-font" style={{ width: "100%", padding: "15px", background: "linear-gradient(135deg, #0f2d6b, #1a56db)", color: "white", border: "none", borderRadius: "14px", fontSize: "17px", fontWeight: "700", cursor: "pointer", boxShadow: "0 6px 20px rgba(26,86,219,0.3)" }}>
+              Continue →
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2 */}
+        {step === 2 && (
+          <div style={{ background: "white", borderRadius: "20px", padding: "40px", boxShadow: "0 4px 24px rgba(10,36,99,0.08)", border: "1px solid #e8edf5" }}>
+            <button onClick={() => setStep(1)} className="body-font" style={{ background: "none", border: "none", color: "#9ca3af", fontSize: "14px", cursor: "pointer", marginBottom: "20px", display: "flex", alignItems: "center", gap: "4px" }}>← Back</button>
+            <h2 className="display-font" style={{ color: "#030a1e", fontSize: "26px", fontWeight: "900", marginBottom: "8px", letterSpacing: "-0.5px" }}>Date & Session</h2>
+            <p className="body-font" style={{ color: "#9ca3af", fontSize: "15px", marginBottom: "24px" }}>Booking for: <strong style={{ color: "#030a1e" }}>{name}</strong></p>
+
+            <div style={{ display: "flex", gap: "16px", marginBottom: "18px", flexWrap: "wrap" }}>
+              {[{ color: "#1a56db", bg: "#f8faff", label: "Available" }, { color: "#d97706", bg: "#fef3c7", label: "Filling fast" }, { color: "#dc2626", bg: "#fee2e2", label: "Unavailable / Holiday" }].map(l => (
+                <div key={l.label} className="body-font" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#6b7280" }}>
+                  <div style={{ width: "12px", height: "12px", borderRadius: "3px", background: l.bg, border: `1.5px solid ${l.color}` }} />
+                  {l.label}
+                </div>
               ))}
             </div>
-          </div>
 
-          {/* right side stats */}
-          <div className="fade-in" style={{ animationDelay: "0.3s", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-            {stats.map((s, i) => (
-              <div key={i} className="stat-card" style={{ animationDelay: `${0.3 + i * 0.1}s` }}>
-                <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "42px", color: "#0066ff", letterSpacing: "-2px", lineHeight: 1 }}>{s.n}</div>
-                <div style={{ fontSize: "13px", color: "#888", marginTop: "8px", fontWeight: "400" }}>{s.label}</div>
-              </div>
-            ))}
-
-            {/* ── OPD TIMINGS CARD — Sunday fix ── */}
-            <div className="stat-card" style={{ gridColumn: "1/-1", background: "#f7faff", border: "1px solid #ddeaff" }}>
-              <div style={{ fontSize: "12px", color: "#0066ff", fontWeight: "600", letterSpacing: "1px", marginBottom: "10px" }}>OPD TIMINGS</div>
-              <div style={{ display: "flex", gap: "24px", marginBottom: "10px" }}>
-                <div>
-                  <div style={{ fontWeight: "600", color: "#0a0a0a", fontSize: "15px" }}>10:00 AM – 1:15 PM</div>
-                  <div style={{ color: "#888", fontSize: "13px" }}>Morning session · 72 slots</div>
-                </div>
-                <div style={{ width: "1px", background: "#ddeaff" }} />
-                <div>
-                  <div style={{ fontWeight: "600", color: "#0a0a0a", fontSize: "15px" }}>3:30 PM – 6:45 PM</div>
-                  <div style={{ color: "#888", fontSize: "13px" }}>Evening session · 72 slots · Mon–Sat</div>
-                </div>
-              </div>
-              <div style={{ borderTop: "1px solid #ddeaff", paddingTop: "8px" }}>
-                <div style={{ fontSize: "12px", color: "#0066ff" }}>
-                  🗓 <strong>Sunday:</strong> Morning only — 10:00 AM – 1:00 PM
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── SERVICES ── */}
-      <section id="services" style={{ padding: "100px 5%", background: "#fafafa" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "start" }}>
-            <div>
-              <div className="section-label">Specialities</div>
-              <h2 className="section-title">Surgical procedures<br />we specialise in</h2>
-              <p className="section-sub">From robotic-assisted joint replacements to complex spine surgeries — advanced orthopaedic care under one roof.</p>
-              <div style={{ marginTop: "32px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                {services.map((s, i) => (
-                  <button key={i} className={`service-pill ${activeService === i ? "active" : ""}`} onClick={() => setActiveService(i)}>
-                    {s.title.split(" ")[0]} {s.title.split(" ")[1]}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div style={{ background: "white", borderRadius: "24px", padding: "40px", border: "1px solid #f0f0f0", minHeight: "280px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-              <div>
-                <div style={{ width: "48px", height: "48px", background: "#f0f5ff", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", color: "#0066ff", marginBottom: "24px" }}>+</div>
-                <h3 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "28px", color: "#0a0a0a", letterSpacing: "-0.5px", marginBottom: "8px" }}>{services[activeService].title}</h3>
-                <p style={{ color: "#888", fontSize: "15px", fontWeight: "300" }}>{services[activeService].sub}</p>
-              </div>
-              {activeService === 0 && (
-                <div style={{ background: "#f0f5ff", borderRadius: "12px", padding: "16px 20px", marginTop: "24px" }}>
-                  <div style={{ fontSize: "12px", color: "#0066ff", fontWeight: "600", letterSpacing: "1px", marginBottom: "4px" }}>FEATURED TECHNOLOGY</div>
-                  <div style={{ fontWeight: "600", color: "#0a0a0a" }}>Johnson & Johnson VELYS™ Robotic System</div>
-                  <div style={{ fontSize: "13px", color: "#666", marginTop: "2px" }}>World's most advanced robotic knee replacement platform</div>
+            <div style={{ marginBottom: "28px" }}>
+              <label className="body-font" style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#374151", marginBottom: "12px" }}>Select Date</label>
+              {loadingAvailability ? (
+                <div className="body-font" style={{ textAlign: "center", padding: "24px", color: "#9ca3af", fontSize: "14px" }}>Checking availability…</div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "8px" }}>
+                  {days.map(d => {
+                    const dateObj = new Date(d);
+                    const dayName = dateObj.toLocaleDateString("en-IN", { weekday: "short" });
+                    const dayNum = dateObj.getDate();
+                    const monthName = dateObj.toLocaleDateString("en-IN", { month: "short" });
+                    const isSun = isSunday(d);
+                    const isToday = d === today;
+                    const badge = getDateBadge(d);
+                    const isHoliday = badge?.isHoliday === true;
+                    const isFullyBooked = badge?.text === "Full" || isHoliday;
+                    const isSelected = selectedDate === d;
+                    let bgColor = isSelected ? "#0f2d6b" : "#f8faff";
+                    let borderColor = isSelected ? "#1a56db" : "#e0e7ff";
+                    if (isHoliday && !isSelected) { bgColor = "#fff1f2"; borderColor = "#fca5a5"; }
+                    else if (isFullyBooked && !isSelected) { bgColor = "#f9f9f9"; borderColor = "#e5e7eb"; }
+                    else if (badge && !isHoliday && badge.text !== "Full" && !isSelected) { bgColor = "#fef9c3"; borderColor = "#fde68a"; }
+                    return (
+                      <button key={d}
+                        onClick={() => { if (isFullyBooked) return; setSelectedDate(d); setSession(isSun ? (canBookMorning() ? "morning" : "") : ""); }}
+                        disabled={isFullyBooked}
+                        title={isHoliday ? "Doctor not available" : ""}
+                        style={{ padding: "10px 4px", borderRadius: "10px", border: `2px solid ${borderColor}`, background: bgColor, cursor: isFullyBooked ? "not-allowed" : "pointer", fontFamily: "'Inter', sans-serif", opacity: isFullyBooked ? 0.75 : 1, transition: "all 0.15s" }}>
+                        <div style={{ fontSize: "10px", color: isSelected ? "rgba(255,255,255,0.6)" : "#9ca3af", marginBottom: "2px" }}>{dayName}</div>
+                        <div style={{ fontSize: "17px", fontWeight: "800", color: isSelected ? "white" : isFullyBooked ? "#d1d5db" : "#030a1e" }}>{dayNum}</div>
+                        <div style={{ fontSize: "11px", fontWeight: "600", color: isSelected ? "rgba(255,255,255,0.8)" : "#6b7280", marginTop: "2px" }}>{monthName}</div>
+                        {isToday && !isHoliday && <div style={{ fontSize: "8px", fontWeight: "700", color: isSelected ? "#93c5fd" : "#1a56db", marginTop: "1px" }}>Today</div>}
+                        {isHoliday && <div style={{ fontSize: "10px", marginTop: "1px" }}>🚫</div>}
+                        {!isHoliday && badge && <div style={{ fontSize: "8px", fontWeight: "700", color: isSelected ? "white" : badge.color, marginTop: "1px" }}>{badge.text}</div>}
+                        {isSun && !badge && !isToday && <div style={{ fontSize: "8px", color: isSelected ? "#93c5fd" : "#1a56db", marginTop: "1px" }}>Sun</div>}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
-              <Link href="/book" style={{ marginTop: "32px", color: "#0066ff", fontWeight: "600", fontSize: "14px", textDecoration: "none", display: "flex", alignItems: "center", gap: "6px" }}>
-                Book a consultation →
-              </Link>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ── SURGERY TIMINGS ── */}
-      <section style={{ padding: "60px 5%", background: "white" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <div style={{ background: "#f7faff", border: "1px solid #ddeaff", borderRadius: "20px", padding: "32px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "32px", flexWrap: "wrap" }}>
-            <div>
-              <div className="section-label" style={{ marginBottom: "6px" }}>Surgery Schedule</div>
-              <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: "22px", color: "#0a0a0a" }}>Elective surgeries: 7:00 AM – 10:00 AM & 2:00 PM – 3:00 PM</div>
-            </div>
-            <div style={{ display: "flex", gap: "16px" }}>
-              <div style={{ textAlign: "center", background: "white", borderRadius: "12px", padding: "16px 24px", border: "1px solid #e8e8e8" }}>
-                <div style={{ fontWeight: "700", color: "#0066ff", fontSize: "18px" }}>7–10 AM</div>
-                <div style={{ fontSize: "12px", color: "#888", marginTop: "2px" }}>Morning OT</div>
+            {/* Session selector */}
+            {selectedDate && (
+              <div style={{ marginBottom: "32px" }}>
+                {getHolidayReason(selectedDate) ? (
+                  <div className="body-font" style={{ background: "#fff1f2", border: "1.5px solid #fca5a5", borderRadius: "16px", padding: "20px 22px", display: "flex", alignItems: "flex-start", gap: "14px" }}>
+                    <div style={{ fontSize: "32px", flexShrink: 0 }}>🚫</div>
+                    <div>
+                      <div style={{ fontWeight: "800", color: "#dc2626", fontSize: "16px", marginBottom: "4px" }}>Doctor Not Available</div>
+                      <div style={{ color: "#9b1c1c", fontSize: "15px", marginBottom: "6px" }}>Doctor not available on this date</div>
+                      <div style={{ color: "#9ca3af", fontSize: "13px" }}>Please select a different date to book your appointment.</div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <label className="body-font" style={{ display: "block", fontSize: "14px", fontWeight: "600", color: "#374151", marginBottom: "12px" }}>Select Session</label>
+                    <div style={{ display: "grid", gridTemplateColumns: isSunday(selectedDate) ? "1fr" : "1fr 1fr", gap: "12px" }}>
+                      {(() => {
+                        const morningLeft = getSessionAvailability(selectedDate, "morning");
+                        const isToday = selectedDate === today;
+                        // Disable booking if past the booking cutoff (9:30 AM) OR session fully over
+                        const morningBookingClosed = isToday && !canBookMorning();
+                        const morningOver = isToday && isMorningSessionOver();
+                        const morningFull = morningLeft === 0;
+                        const morningDisabled = morningFull || morningBookingClosed;
+                        return (
+                          <button onClick={() => { if (!morningDisabled) setSession("morning"); }} disabled={morningDisabled}
+                            style={{ padding: "18px", borderRadius: "14px", border: `2px solid ${morningDisabled ? "#e5e7eb" : session === "morning" ? "#1a56db" : "#e0e7ff"}`, background: morningDisabled ? "#f9f9f9" : session === "morning" ? "#eff6ff" : "white", cursor: morningDisabled ? "not-allowed" : "pointer", fontFamily: "'Inter', sans-serif", textAlign: "left", opacity: morningDisabled ? 0.6 : 1, transition: "all 0.2s" }}>
+                            <div style={{ fontSize: "20px", marginBottom: "6px" }}>🌅</div>
+                            <div style={{ fontWeight: "700", color: morningDisabled ? "#9ca3af" : "#030a1e", fontSize: "16px" }}>Morning Session</div>
+                            <div style={{ color: "#6b7280", fontSize: "13px", marginTop: "3px" }}>10:00 AM – 1:15 PM · Tokens 1–72</div>
+                            {morningOver ? <div style={{ color: "#dc2626", fontSize: "12px", fontWeight: "700", marginTop: "6px" }}>Session Ended</div>
+                              : morningBookingClosed && !morningFull ? <div style={{ color: "#d97706", fontSize: "12px", fontWeight: "700", marginTop: "6px" }}>Booking closed for today</div>
+                              : morningFull ? <div style={{ color: "#dc2626", fontSize: "12px", fontWeight: "700", marginTop: "6px" }}>Fully Booked</div>
+                              : morningLeft !== null && morningLeft <= 10 ? <div style={{ color: "#d97706", fontSize: "12px", fontWeight: "700", marginTop: "6px" }}>Only {morningLeft} slots left!</div>
+                              : morningLeft !== null ? <div style={{ color: "#16a34a", fontSize: "12px", marginTop: "6px" }}>{morningLeft} slots available</div>
+                              : null}
+                          </button>
+                        );
+                      })()}
+                      {!isSunday(selectedDate) && (() => {
+                        const eveningLeft = getSessionAvailability(selectedDate, "evening");
+                        const isToday = selectedDate === today;
+                        const eveningBookingClosed = isToday && !canBookEvening();
+                        const eveningOver = isToday && isEveningSessionOver();
+                        const eveningFull = eveningLeft === 0;
+                        const eveningDisabled = eveningFull || eveningBookingClosed;
+                        return (
+                          <button onClick={() => { if (!eveningDisabled) setSession("evening"); }} disabled={eveningDisabled}
+                            style={{ padding: "18px", borderRadius: "14px", border: `2px solid ${eveningDisabled ? "#e5e7eb" : session === "evening" ? "#1a56db" : "#e0e7ff"}`, background: eveningDisabled ? "#f9f9f9" : session === "evening" ? "#eff6ff" : "white", cursor: eveningDisabled ? "not-allowed" : "pointer", fontFamily: "'Inter', sans-serif", textAlign: "left", opacity: eveningDisabled ? 0.6 : 1, transition: "all 0.2s" }}>
+                            <div style={{ fontSize: "20px", marginBottom: "6px" }}>🌆</div>
+                            <div style={{ fontWeight: "700", color: eveningDisabled ? "#9ca3af" : "#030a1e", fontSize: "16px" }}>Evening Session</div>
+                            <div style={{ color: "#6b7280", fontSize: "13px", marginTop: "3px" }}>3:30 PM – 6:45 PM · Tokens 73–144</div>
+                            {eveningOver ? <div style={{ color: "#dc2626", fontSize: "12px", fontWeight: "700", marginTop: "6px" }}>Session Ended</div>
+                              : eveningBookingClosed && !eveningFull ? <div style={{ color: "#d97706", fontSize: "12px", fontWeight: "700", marginTop: "6px" }}>Booking closed for today</div>
+                              : eveningFull ? <div style={{ color: "#dc2626", fontSize: "12px", fontWeight: "700", marginTop: "6px" }}>Fully Booked</div>
+                              : eveningLeft !== null && eveningLeft <= 10 ? <div style={{ color: "#d97706", fontSize: "12px", fontWeight: "700", marginTop: "6px" }}>Only {eveningLeft} slots left!</div>
+                              : eveningLeft !== null ? <div style={{ color: "#16a34a", fontSize: "12px", marginTop: "6px" }}>{eveningLeft} slots available</div>
+                              : null}
+                          </button>
+                        );
+                      })()}
+                    </div>
+                    {isSunday(selectedDate) && (
+                      <div className="body-font" style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "10px", padding: "12px 16px", marginTop: "12px", fontSize: "14px", color: "#92400e" }}>
+                        🗓 Sunday — Morning session only (10:00 AM – 1:15 PM)
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-              <div style={{ textAlign: "center", background: "white", borderRadius: "12px", padding: "16px 24px", border: "1px solid #e8e8e8" }}>
-                <div style={{ fontWeight: "700", color: "#0066ff", fontSize: "18px" }}>2–3 PM</div>
-                <div style={{ fontSize: "12px", color: "#888", marginTop: "2px" }}>Afternoon OT</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            )}
 
-      {/* ── TEAM ── */}
-      <section id="doctors" style={{ padding: "100px 5%", background: "#fafafa" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <div style={{ marginBottom: "56px" }}>
-            <div className="section-label">Our Team</div>
-            <h2 className="section-title">Specialists you<br />can trust</h2>
+            <button onClick={validateStep2}
+              disabled={!selectedDate || !session || loadingSlots || !!getHolidayReason(selectedDate)}
+              className="body-font"
+              style={{ width: "100%", padding: "15px", background: (!selectedDate || !session || !!getHolidayReason(selectedDate)) ? "#e5e7eb" : "linear-gradient(135deg, #0f2d6b, #1a56db)", color: (!selectedDate || !session || !!getHolidayReason(selectedDate)) ? "#9ca3af" : "white", border: "none", borderRadius: "14px", fontSize: "17px", fontWeight: "700", cursor: (!selectedDate || !session || !!getHolidayReason(selectedDate)) ? "not-allowed" : "pointer", transition: "all 0.2s", boxShadow: (!selectedDate || !session || !!getHolidayReason(selectedDate)) ? "none" : "0 6px 20px rgba(26,86,219,0.3)" }}>
+              {loadingSlots ? "Loading slots…" : "See Available Slots →"}
+            </button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "20px" }}>
-            {team.map((t, i) => (
-              <div key={i} className="team-card">
-                <div style={{ width: "52px", height: "52px", borderRadius: "14px", background: i === 0 ? "#0066ff" : "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Serif Display', serif", fontSize: "20px", color: i === 0 ? "white" : "#333", marginBottom: "20px", fontWeight: "700" }}>
-                  {t.name.split(" ")[1][0]}
+        )}
+
+        {/* STEP 3 */}
+        {step === 3 && (
+          <div style={{ background: "white", borderRadius: "20px", padding: "40px", boxShadow: "0 4px 24px rgba(10,36,99,0.08)", border: "1px solid #e8edf5" }}>
+            <button onClick={() => setStep(2)} className="body-font" style={{ background: "none", border: "none", color: "#9ca3af", fontSize: "14px", cursor: "pointer", marginBottom: "20px" }}>← Back</button>
+            <h2 className="display-font" style={{ color: "#030a1e", fontSize: "26px", fontWeight: "900", marginBottom: "8px", letterSpacing: "-0.5px" }}>Select a Slot</h2>
+            <p className="body-font" style={{ color: "#9ca3af", fontSize: "15px", marginBottom: "20px" }}>
+              {formatDate(selectedDate)} · {session === "morning" ? "Morning" : "Evening"} Session
+            </p>
+            <div style={{ display: "flex", gap: "16px", marginBottom: "18px", flexWrap: "wrap" }}>
+              {[{ color: "#1a56db", bg: "#f8faff", label: "Available" }, { color: "white", bg: "#0f2d6b", label: "Selected" }, { color: "#d1d5db", bg: "#f3f4f6", label: "Booked" }].map(l => (
+                <div key={l.label} className="body-font" style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "#6b7280" }}>
+                  <div style={{ width: "12px", height: "12px", borderRadius: "3px", background: l.bg, border: `1.5px solid ${l.color}` }} />
+                  {l.label}
                 </div>
-                <div style={{ fontWeight: "600", fontSize: "16px", color: "#0a0a0a", marginBottom: "4px" }}>{t.name}</div>
-                <div style={{ color: "#0066ff", fontSize: "13px", fontWeight: "500", marginBottom: "8px" }}>{t.role}</div>
-                <div style={{ color: "#888", fontSize: "13px", marginBottom: "12px", fontWeight: "300" }}>{t.qual}</div>
-                <div style={{ fontSize: "12px", color: "#aaa", borderTop: "1px solid #f5f5f5", paddingTop: "12px" }}>{t.time}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── ROOMS ── */}
-      <section id="rooms" style={{ padding: "100px 5%", background: "white" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "start" }}>
-          <div>
-            <div className="section-label">Facilities</div>
-            <h2 className="section-title">Comfortable<br />recovery rooms</h2>
-            <p className="section-sub">All AC rooms with modern amenities. ICU with 3 dedicated beds for critical care.</p>
-            <div style={{ marginTop: "24px", display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              {["Cashless Mediclaim", "24/7 Nursing Care", "ICU Available"].map(f => (
-                <span key={f} className="feature-chip">
-                  <span style={{ color: "#0066ff", fontSize: "10px" }}>●</span> {f}
-                </span>
               ))}
             </div>
-          </div>
-          <div style={{ background: "#fafafa", borderRadius: "20px", padding: "32px", border: "1px solid #f0f0f0" }}>
-            {rooms.map((r, i) => (
-              <div key={i} className="room-row">
-                <div>
-                  <div style={{ fontWeight: "600", color: "#0a0a0a", fontSize: "15px" }}>{r.type}</div>
-                  <div style={{ color: "#888", fontSize: "13px", marginTop: "2px" }}>Room {r.rooms}</div>
+            {slots.length > 0 && slots.filter(s => s.is_available).length === 0 ? (
+              <div style={{ textAlign: "center", padding: "48px 20px" }}>
+                <div style={{ fontSize: "48px", marginBottom: "16px" }}>😕</div>
+                <div className="display-font" style={{ fontWeight: "900", color: "#030a1e", fontSize: "22px", marginBottom: "8px" }}>Fully Booked!</div>
+                <div className="body-font" style={{ fontSize: "15px", color: "#9ca3af", marginBottom: "20px" }}>All slots for this session are taken.</div>
+                <button onClick={() => setStep(2)} className="body-font" style={{ background: "linear-gradient(135deg, #0f2d6b, #1a56db)", color: "white", border: "none", borderRadius: "12px", padding: "12px 28px", fontSize: "15px", fontWeight: "700", cursor: "pointer" }}>Choose Another Date</button>
+              </div>
+            ) : slots.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "48px 20px" }}>
+                <div style={{ fontSize: "48px", marginBottom: "16px" }}>😕</div>
+                <div className="display-font" style={{ fontWeight: "900", color: "#030a1e", fontSize: "22px", marginBottom: "8px" }}>No slots found</div>
+                <button onClick={() => setStep(2)} className="body-font" style={{ background: "linear-gradient(135deg, #0f2d6b, #1a56db)", color: "white", border: "none", borderRadius: "12px", padding: "12px 28px", fontSize: "15px", fontWeight: "700", cursor: "pointer" }}>Choose Another Date</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "8px", marginBottom: "24px" }}>
+                  {slots.map(slot => {
+                    const isSelected = selectedSlot?.slot_id === slot.slot_id;
+                    const isBooked = !slot.is_available;
+                    return (
+                      <button key={slot.slot_id} onClick={() => { if (!isBooked) setSelectedSlot(slot); }} disabled={isBooked}
+                        style={{ padding: "12px 4px", borderRadius: "10px", border: `2px solid ${isBooked ? "#e5e7eb" : isSelected ? "#1a56db" : "#e0e7ff"}`, background: isBooked ? "#f3f4f6" : isSelected ? "#0f2d6b" : "#f8faff", cursor: isBooked ? "not-allowed" : "pointer", fontFamily: "'Inter', sans-serif", opacity: isBooked ? 0.45 : 1, transition: "all 0.15s" }}>
+                        <div style={{ fontSize: "15px", fontWeight: "800", color: isBooked ? "#d1d5db" : isSelected ? "white" : "#030a1e" }}>{slot.token_number}</div>
+                        <div style={{ fontSize: "9px", color: isBooked ? "#e5e7eb" : isSelected ? "rgba(255,255,255,0.65)" : "#9ca3af", marginTop: "2px" }}>{isBooked ? "Taken" : formatTime(slot.start_time)}</div>
+                      </button>
+                    );
+                  })}
                 </div>
-                <div style={{ background: "#f0f5ff", color: "#0066ff", padding: "4px 12px", borderRadius: "100px", fontSize: "12px", fontWeight: "600" }}>{r.beds} beds</div>
-              </div>
-            ))}
+                {selectedSlot && (
+                  <div style={{ background: "#eff6ff", border: "1.5px solid #bfdbfe", borderRadius: "14px", padding: "18px 22px", marginBottom: "20px" }}>
+                    <div className="body-font" style={{ fontWeight: "700", color: "#030a1e", fontSize: "16px", marginBottom: "4px" }}>Token #{selectedSlot.token_number} · {formatTime(selectedSlot.start_time)} – {formatTime(selectedSlot.end_time)}</div>
+                    <div className="body-font" style={{ color: "#6b7280", fontSize: "14px" }}>{formatDate(selectedSlot.slot_date)}</div>
+                  </div>
+                )}
+                {bookingError && <div className="body-font" style={{ background: "#fff1f2", border: "1px solid #fecdd3", borderRadius: "10px", padding: "12px 16px", marginBottom: "16px", color: "#dc2626", fontSize: "14px" }}>⚠️ {bookingError}</div>}
+                <button onClick={handleBook} disabled={!selectedSlot || bookingLoading} className="body-font"
+                  style={{ width: "100%", padding: "15px", background: !selectedSlot ? "#e5e7eb" : "linear-gradient(135deg, #0f2d6b, #1a56db)", color: !selectedSlot ? "#9ca3af" : "white", border: "none", borderRadius: "14px", fontSize: "17px", fontWeight: "700", cursor: !selectedSlot ? "not-allowed" : "pointer", boxShadow: !selectedSlot ? "none" : "0 6px 20px rgba(26,86,219,0.3)" }}>
+                  {bookingLoading ? "Booking…" : "Confirm Booking →"}
+                </button>
+              </>
+            )}
           </div>
-        </div>
-      </section>
+        )}
 
-      {/* ── CTA ── */}
-      <section style={{ padding: "60px 5% 100px" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <div className="cta-section">
-            <div className="cta-grid" />
-            <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr auto", gap: "60px", alignItems: "center" }}>
-              <div>
-                <div style={{ fontSize: "12px", fontWeight: "600", letterSpacing: "2px", color: "#0066ff", marginBottom: "16px" }}>BOOK ONLINE</div>
-                <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: "clamp(28px, 3.5vw, 44px)", color: "white", letterSpacing: "-1px", marginBottom: "16px", lineHeight: 1.15 }}>
-                  Skip the queue.<br />Book your token online.
-                </h2>
-                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "16px", fontWeight: "300", maxWidth: "480px", lineHeight: 1.7 }}>
-                  144 online slots available daily. Book your OPD appointment in under 2 minutes and get your token number instantly.
-                </p>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", flexShrink: 0 }}>
-                <Link href="/book" style={{ background: "#0066ff", color: "white", padding: "16px 36px", borderRadius: "100px", textDecoration: "none", fontSize: "15px", fontWeight: "600", textAlign: "center", transition: "all 0.2s", whiteSpace: "nowrap" }}>
-                  Book OPD Appointment
-                </Link>
-                <a href="tel:+917021094941" style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)", padding: "16px 36px", borderRadius: "100px", textDecoration: "none", fontSize: "15px", fontWeight: "400", textAlign: "center", border: "1px solid rgba(255,255,255,0.12)", whiteSpace: "nowrap" }}>
-                  +91 70210 94941
-                </a>
+        {/* STEP 4 */}
+        {step === 4 && booking && (
+          <div style={{ background: "white", borderRadius: "20px", padding: "40px", boxShadow: "0 4px 24px rgba(10,36,99,0.08)", border: "1px solid #e8edf5", textAlign: "center" }}>
+            <div style={{ width: "72px", height: "72px", background: "linear-gradient(135deg, #ecfdf5, #d1fae5)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "36px", margin: "0 auto 20px", border: "2px solid #6ee7b7" }}>✅</div>
+            <h2 className="display-font" style={{ color: "#030a1e", fontSize: "28px", fontWeight: "900", marginBottom: "8px", letterSpacing: "-0.5px" }}>Appointment Confirmed!</h2>
+            <p className="body-font" style={{ color: "#9ca3af", fontSize: "15px", marginBottom: "32px" }}>Show the QR code at hospital reception.</p>
+            <div style={{ background: "linear-gradient(135deg, #0a1628, #1a2f6e)", borderRadius: "20px", padding: "32px 28px", marginBottom: "24px", color: "white", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: "-30px", right: "-30px", width: "120px", height: "120px", borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+              <div className="body-font" style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)", letterSpacing: "3px", marginBottom: "12px", fontWeight: "700" }}>YOUR TOKEN NUMBER</div>
+              <div className="display-font" style={{ fontSize: "80px", fontWeight: "900", letterSpacing: "-3px", lineHeight: 1, marginBottom: "12px" }}>{booking.token_number}</div>
+              <div className="body-font" style={{ fontSize: "16px", color: "rgba(255,255,255,0.85)", marginBottom: "4px" }}>{formatDate(booking.slot_date)}</div>
+              <div className="body-font" style={{ fontSize: "14px", color: "#93c5fd" }}>{formatTime(booking.start_time)} – {formatTime(booking.end_time)}</div>
+              <div style={{ marginTop: "16px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "14px" }}>
+                <span className="body-font" style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)" }}>{booking.patient_name} · {booking.phone}</span>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FOOTER ── */}
-      <footer id="contact" style={{ background: "#0a0a0a", padding: "60px 5% 40px", color: "rgba(255,255,255,0.4)" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "48px", marginBottom: "48px" }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
-                <div style={{ width: "32px", height: "32px", background: "#0066ff", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "700", fontSize: "14px" }}>N</div>
-                <div style={{ color: "white", fontWeight: "600", fontSize: "14px" }}>Neel Orthopaedic</div>
-              </div>
-              <p style={{ fontSize: "14px", lineHeight: "1.8", maxWidth: "280px", fontWeight: "300" }}>
-                1st Floor, Shrinath Apartment,<br />Goddev Naka, B.P. Road,<br />Bhayander East, Thane,<br />Mumbai — 401105, MH
+            <div style={{ marginBottom: "24px" }}>
+              <p className="body-font" style={{ fontSize: "14px", color: "#9ca3af", marginBottom: "14px" }}>📱 Screenshot this QR code to show at reception</p>
+              <div style={{ display: "flex", justifyContent: "center" }}><QRCode data={qrData} size={200} /></div>
+              <p className="body-font" style={{ fontSize: "12px", color: "#d1d5db", marginTop: "10px" }}>Scan at hospital reception to check in</p>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "28px", textAlign: "left" }}>
+              {[
+                { icon: "📍", title: "Location", desc: "Shrinath Apartment, Goddev Naka, BP Road, Bhayander East" },
+                { icon: "⏰", title: "Arrive on time", desc: "Please arrive on time for your scheduled slot." },
+                { icon: "📋", title: "Bring documents", desc: "Previous reports, X-rays, prescriptions if any" },
+                { icon: "📞", title: "Helpline", desc: "+91 70210 94941 for any queries" },
+              ].map((item, i) => (
+                <div key={i} style={{ background: "#f8faff", borderRadius: "12px", padding: "16px", border: "1px solid #e0e7ff" }}>
+                  <div style={{ fontSize: "22px", marginBottom: "6px" }}>{item.icon}</div>
+                  <div className="body-font" style={{ fontWeight: "700", color: "#030a1e", fontSize: "14px", marginBottom: "4px" }}>{item.title}</div>
+                  <div className="body-font" style={{ color: "#6b7280", fontSize: "13px", lineHeight: "1.5" }}>{item.desc}</div>
+                </div>
+              ))}
+            </div>
+            {/* Status page notice */}
+            <div style={{ background: "#eff6ff", border: "1.5px solid #bfdbfe", borderRadius: "12px", padding: "14px 18px", marginBottom: "16px", textAlign: "left" }}>
+              <p className="body-font" style={{ fontSize: "13px", color: "#1e40af", margin: 0 }}>
+                📱 Check real-time OPD status before leaving home at{" "}
+                <strong>yoursite.vercel.app/status</strong> — we'll update it if there are any delays.
               </p>
-              <div style={{ marginTop: "16px", color: "rgba(255,255,255,0.6)", fontSize: "14px" }}>📞 +91 70210 94941</div>
             </div>
-            <div>
-              <div style={{ color: "rgba(255,255,255,0.2)", fontSize: "11px", letterSpacing: "1.5px", fontWeight: "600", marginBottom: "16px" }}>SERVICES</div>
-              {["Robotic Knee Replacement", "Hip Replacement", "Spine Surgery", "Arthroscopy", "Trauma Care"].map(s => (
-                <div key={s} style={{ marginBottom: "10px", fontSize: "13px", fontWeight: "300" }}>{s}</div>
-              ))}
-            </div>
-            <div>
-              <div style={{ color: "rgba(255,255,255,0.2)", fontSize: "11px", letterSpacing: "1.5px", fontWeight: "600", marginBottom: "16px" }}>HOSPITAL</div>
-              {["Book Appointment", "Token Status", "Our Doctors", "Room Facilities", "Emergency"].map(s => (
-                <div key={s} style={{ marginBottom: "10px", fontSize: "13px", fontWeight: "300" }}>{s}</div>
-              ))}
-            </div>
-
-            {/* ── FOOTER TIMINGS — Sunday fix ── */}
-            <div>
-              <div style={{ color: "rgba(255,255,255,0.2)", fontSize: "11px", letterSpacing: "1.5px", fontWeight: "600", marginBottom: "16px" }}>TIMINGS</div>
-              <div style={{ fontSize: "13px", lineHeight: "1.9", fontWeight: "300" }}>
-                <div style={{ color: "rgba(255,255,255,0.6)", fontWeight: "500" }}>OPD · Mon–Sat</div>
-                <div>10:00 – 13:15</div>
-                <div>15:30 – 18:45</div>
-                <div style={{ color: "rgba(255,255,255,0.6)", fontWeight: "500", marginTop: "10px" }}>OPD · Sunday</div>
-                <div>10:00 – 13:00 only</div>
-                <div style={{ color: "rgba(255,255,255,0.6)", fontWeight: "500", marginTop: "10px" }}>Surgery OT</div>
-                <div>07:00 – 10:00</div>
-                <div>14:00 – 15:00</div>
-                <div style={{ color: "#0066ff", marginTop: "10px", fontWeight: "500" }}>Emergency 24/7</div>
-              </div>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button onClick={() => window.print()} className="body-font" style={{ flex: 1, padding: "14px", background: "white", color: "#030a1e", border: "2px solid #e0e7ff", borderRadius: "14px", fontSize: "15px", fontWeight: "700", cursor: "pointer" }}>🖨️ Print / Save</button>
+              <Link href="/" className="body-font" style={{ flex: 1, padding: "14px", background: "linear-gradient(135deg, #0f2d6b, #1a56db)", color: "white", borderRadius: "14px", fontSize: "15px", fontWeight: "700", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>← Back to Home</Link>
             </div>
           </div>
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "24px", display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-            <span>© 2026 Neel Orthopaedic & Multi Speciality Hospital</span>
-            <span style={{ fontStyle: "italic" }}>pain to painless</span>
-          </div>
-        </div>
-      </footer>
+        )}
+      </div>
     </div>
   );
 }

@@ -45,9 +45,9 @@ const parseArr = (str: string | null | undefined): string[] =>
   str ? str.split(",").map(s => s.trim()).filter(Boolean) : [];
 
 const inp: React.CSSProperties = {
-  width:"100%", padding:"10px 14px", borderRadius:"8px",
+  width:"100%", padding:"11px 14px", borderRadius:"10px",
   border:"1.5px solid #e0e7ff", fontSize:"15px",
-  fontFamily:"Georgia, serif", boxSizing:"border-box", outline:"none", background:"white",
+  fontFamily:"'Inter', sans-serif", boxSizing:"border-box", outline:"none", background:"white", color:"#030a1e",
 };
 const cb: React.CSSProperties = {
   width:"16px", height:"16px", marginRight:"6px", accentColor:"#0a2463", flexShrink:0,
@@ -232,7 +232,6 @@ ${instrRows}
 export default function PrescriptionPage() {
   const { user, loading: authLoading, signOut } = useAuth("/prescription");
 
-  // Doctor role = "doctor", reception role = "reception"
   const role = user?.role === "doctor" ? "doctor" : "reception";
 
   const [medicines, setMedicines] = useState<Medicine[]>([]);
@@ -399,45 +398,51 @@ export default function PrescriptionPage() {
       )})).filter(g=>g.items.length>0);
 
   const sectionBox = (children: React.ReactNode, title: string) => (
-    <div style={{background:"white",borderRadius:"14px",padding:"24px",marginBottom:"20px",border:"1px solid #e8edf5",boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
-      <div style={{fontWeight:"700",color:"#0a2463",fontSize:"15px",marginBottom:"16px",paddingBottom:"10px",borderBottom:"2px solid #f0f4ff"}}>{title}</div>
+    <div style={{background:"white",borderRadius:"16px",padding:"24px",marginBottom:"20px",border:"1px solid #e8edf5",boxShadow:"0 1px 6px rgba(10,36,99,0.06)"}}>
+      <div style={{fontWeight:"900",color:"#030a1e",fontSize:"16px",marginBottom:"16px",paddingBottom:"12px",borderBottom:"2px solid #f0f4ff",fontFamily:"'Playfair Display', serif"}}>{title}</div>
       {children}
     </div>
   );
 
   if (authLoading || !user) {
     return (
-      <div style={{minHeight:"100vh",background:"#f0f4ff",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"Georgia, serif",color:"#0a2463"}}>
+      <div style={{minHeight:"100vh",background:"#f0f4ff",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter', sans-serif",color:"#030a1e"}}>
         Loading…
       </div>
     );
   }
 
   return (
-    <div style={{minHeight:"100vh",background:"#f0f4ff",fontFamily:"Georgia, serif"}}>
+    <div style={{minHeight:"100vh",background:"#f0f4ff",fontFamily:"'Inter', sans-serif"}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+        input,select,textarea{color:#030a1e!important;font-size:15px!important;font-family:'Inter',sans-serif!important;}
+        input::placeholder,textarea::placeholder{color:#9ca3af!important;}
+        input:focus,select:focus,textarea:focus{border-color:#1a56db!important;box-shadow:0 0 0 3px rgba(26,86,219,0.08)!important;outline:none!important;}
+        button{font-family:'Inter',sans-serif!important;}
+      `}</style>
       <StaffNavbar user={user} onSignOut={signOut} />
 
-      {/* Sub-header with action buttons */}
-      <div style={{background:"#0a2463",padding:"0 5%",height:"52px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{color:"white",fontWeight:"700",fontSize:"15px"}}>
+      <div style={{background:"linear-gradient(135deg,#0a1628,#1a2f6e)",padding:"0 5%",height:"56px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{color:"white",fontWeight:"700",fontSize:"15px",fontFamily:"'Playfair Display',serif"}}>
           {role==="reception"?"👩‍💼 Reception — Patient Entry":"👨‍⚕️ Dr. G.K. Boob — Prescription"}
         </div>
         <div style={{display:"flex",gap:"12px",alignItems:"center"}}>
           {role==="doctor"&&selectedToken&&(
             <>
               <button onClick={saveDoctor} disabled={saving}
-                style={{background:saved?"#16a34a":"#1a73e8",color:"white",border:"none",padding:"8px 20px",borderRadius:"8px",fontSize:"14px",fontWeight:"600",cursor:"pointer",fontFamily:"Georgia, serif"}}>
+                style={{background:saved?"linear-gradient(135deg,#064e3b,#10b981)":"linear-gradient(135deg,#1a56db,#60a5fa)",color:"white",border:"none",padding:"9px 22px",borderRadius:"10px",fontSize:"14px",fontWeight:"700",cursor:"pointer",boxShadow:"0 4px 14px rgba(26,86,219,0.3)"}}>
                 {saving?"Saving...":saved?"✓ Saved":"Save"}
               </button>
               <button onClick={handlePrint} disabled={!saved}
-                style={{background:!saved?"rgba(255,255,255,0.15)":"white",color:!saved?"rgba(255,255,255,0.4)":"#0a2463",border:"none",padding:"8px 20px",borderRadius:"8px",fontSize:"14px",fontWeight:"600",cursor:!saved?"not-allowed":"pointer",fontFamily:"Georgia, serif"}}>
+                style={{background:!saved?"rgba(255,255,255,0.08)":"white",color:!saved?"rgba(255,255,255,0.3)":"#030a1e",border:"none",padding:"9px 22px",borderRadius:"10px",fontSize:"14px",fontWeight:"700",cursor:!saved?"not-allowed":"pointer"}}>
                 🖨️ Print
               </button>
             </>
           )}
           {role==="reception"&&(
             <button onClick={saveReception} disabled={saving||!recForm.patient_name||!recForm.chief_complaints.length}
-              style={{background:saving?"#94a3b8":saved?"#16a34a":"#1a73e8",color:"white",border:"none",padding:"8px 20px",borderRadius:"8px",fontSize:"14px",fontWeight:"600",cursor:"pointer",fontFamily:"Georgia, serif"}}>
+              style={{background:saving?"rgba(255,255,255,0.1)":saved?"linear-gradient(135deg,#064e3b,#10b981)":"linear-gradient(135deg,#1a56db,#60a5fa)",color:"white",border:"none",padding:"9px 22px",borderRadius:"10px",fontSize:"14px",fontWeight:"700",cursor:"pointer",boxShadow:"0 4px 14px rgba(26,86,219,0.3)"}}>
               {saving?"Saving...":saved?"✓ Sent to Doctor":editingTokenId?"Update →":"Send to Doctor →"}
             </button>
           )}
@@ -446,21 +451,21 @@ export default function PrescriptionPage() {
 
       <div style={{padding:"24px 5%",display:"grid",gridTemplateColumns:"280px 1fr",gap:"24px",maxWidth:"1200px",margin:"0 auto"}}>
         {/* Sidebar */}
-        <div style={{background:"white",borderRadius:"16px",padding:"20px",boxShadow:"0 2px 8px rgba(0,0,0,0.05)",height:"fit-content",position:"sticky",top:"24px"}}>
-          <div style={{fontWeight:"700",color:"#0a2463",fontSize:"15px",marginBottom:"4px"}}>
+        <div style={{background:"white",borderRadius:"18px",padding:"22px",boxShadow:"0 2px 12px rgba(10,36,99,0.07)",height:"fit-content",position:"sticky",top:"24px",border:"1px solid #e8edf5"}}>
+          <div style={{fontWeight:"900",color:"#030a1e",fontSize:"16px",marginBottom:"4px",fontFamily:"'Playfair Display',serif"}}>
             {role==="doctor"?"Today's Patients":"Today's Tokens"}
           </div>
-          <div style={{fontSize:"12px",color:"#888",marginBottom:"12px"}}>
+          <div style={{fontSize:"13px",color:"#9ca3af",marginBottom:"14px"}}>
             {tokens.length} patient{tokens.length!==1?"s":""} · {new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short"})}
           </div>
           {role==="reception"&&(
             <button onClick={()=>{setEditingTokenId(null);setSaved(false);setRecForm({patient_name:"",age:"",sex:"Male",known_allergies:"",nutritional:[],comorbidities:[],chief_complaints:[]});}}
-              style={{width:"100%",padding:"10px",background:"#0a2463",color:"white",border:"none",borderRadius:"8px",fontSize:"13px",fontWeight:"600",cursor:"pointer",fontFamily:"Georgia, serif",marginBottom:"12px"}}>
+              style={{width:"100%",padding:"11px",background:"linear-gradient(135deg,#0f2d6b,#1a56db)",color:"white",border:"none",borderRadius:"10px",fontSize:"14px",fontWeight:"700",cursor:"pointer",marginBottom:"14px",boxShadow:"0 4px 12px rgba(26,86,219,0.3)"}}>
               + New Patient
             </button>
           )}
           {tokens.length===0?(
-            <div style={{color:"#999",fontSize:"13px",textAlign:"center",padding:"20px"}}>
+            <div style={{color:"#9ca3af",fontSize:"14px",textAlign:"center",padding:"20px"}}>
               {role==="doctor"?"⏳ Waiting for reception...":"No patients yet today"}
             </div>
           ):(
@@ -468,21 +473,21 @@ export default function PrescriptionPage() {
               {tokens.map(t=>(
                 <div key={t.id}
                   onClick={()=>{if(role==="doctor"){setSelectedToken(t);loadDocForm(t);setSaved(false);}else loadRecForm(t);}}
-                  style={{padding:"12px",borderRadius:"10px",cursor:"pointer",border:"1.5px solid",borderColor:(role==="doctor"?selectedToken?.id:editingTokenId)===t.id?"#0a2463":"#e8edf5",background:(role==="doctor"?selectedToken?.id:editingTokenId)===t.id?"#f0f4ff":"white"}}>
+                  style={{padding:"14px",borderRadius:"12px",cursor:"pointer",border:"1.5px solid",borderColor:(role==="doctor"?selectedToken?.id:editingTokenId)===t.id?"#1a56db":"#e8edf5",background:(role==="doctor"?selectedToken?.id:editingTokenId)===t.id?"#eff6ff":"white",transition:"all 0.15s"}}>
                   <div style={{display:"flex",alignItems:"center",gap:"10px"}}>
-                    <div style={{width:"32px",height:"32px",background:"#0a2463",borderRadius:"8px",display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontWeight:"800",fontSize:"13px",flexShrink:0}}>{t.token_number}</div>
+                    <div style={{width:"34px",height:"34px",background:"linear-gradient(135deg,#0f2d6b,#1a56db)",borderRadius:"9px",display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontWeight:"900",fontSize:"14px",flexShrink:0}}>{t.token_number}</div>
                     <div>
-                      <div style={{fontWeight:"600",fontSize:"13px",color:"#0a2463"}}>{t.patient_name}</div>
-                      <div style={{fontSize:"11px",color:"#666"}}>{t.age} yrs · {t.sex}</div>
+                      <div style={{fontWeight:"700",fontSize:"14px",color:"#030a1e"}}>{t.patient_name}</div>
+                      <div style={{fontSize:"12px",color:"#9ca3af"}}>{t.age} yrs · {t.sex}</div>
                       {role==="doctor"&&(
-                        <div style={{fontSize:"11px",color:t.filled_by_doctor?"#16a34a":"#f59e0b",marginTop:"2px"}}>
+                        <div style={{fontSize:"12px",color:t.filled_by_doctor?"#10b981":"#f59e0b",marginTop:"2px",fontWeight:"600"}}>
                           {t.filled_by_doctor?"✓ Completed":"⏳ Pending"}
                         </div>
                       )}
                     </div>
                   </div>
                   {t.known_allergies&&(
-                    <div style={{fontSize:"10px",color:"#dc2626",marginTop:"6px",background:"#fee2e2",padding:"3px 8px",borderRadius:"4px"}}>
+                    <div style={{fontSize:"11px",color:"#dc2626",marginTop:"8px",background:"#fee2e2",padding:"4px 10px",borderRadius:"6px",fontWeight:"600"}}>
                       ⚠️ {t.known_allergies}
                     </div>
                   )}
@@ -497,22 +502,22 @@ export default function PrescriptionPage() {
           {role==="reception"&&(
             <div>
               {editingTokenId&&(
-                <div style={{background:"#fef3c7",borderRadius:"10px",padding:"10px 16px",marginBottom:"16px",fontSize:"13px",color:"#92400e",border:"1px solid #fde68a"}}>
+                <div style={{background:"#fef3c7",borderRadius:"12px",padding:"12px 18px",marginBottom:"18px",fontSize:"14px",color:"#92400e",border:"1px solid #fde68a",fontWeight:"600"}}>
                   ✏️ Editing Token #{tokens.find(t=>t.id===editingTokenId)?.token_number} — {tokens.find(t=>t.id===editingTokenId)?.patient_name}
                 </div>
               )}
               {sectionBox(
                 <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr",gap:"16px"}}>
                   <div>
-                    <label style={{display:"block",fontSize:"13px",fontWeight:"600",color:"#374151",marginBottom:"6px"}}>Patient Name *</label>
+                    <label style={{display:"block",fontSize:"13px",fontWeight:"700",color:"#374151",marginBottom:"7px"}}>Patient Name *</label>
                     <input value={recForm.patient_name} onChange={e=>setRecForm({...recForm,patient_name:e.target.value})} placeholder="Full name" style={inp}/>
                   </div>
                   <div>
-                    <label style={{display:"block",fontSize:"13px",fontWeight:"600",color:"#374151",marginBottom:"6px"}}>Age</label>
+                    <label style={{display:"block",fontSize:"13px",fontWeight:"700",color:"#374151",marginBottom:"7px"}}>Age</label>
                     <input type="number" value={recForm.age} onChange={e=>setRecForm({...recForm,age:e.target.value})} placeholder="Years" style={inp}/>
                   </div>
                   <div>
-                    <label style={{display:"block",fontSize:"13px",fontWeight:"600",color:"#374151",marginBottom:"6px"}}>Sex</label>
+                    <label style={{display:"block",fontSize:"13px",fontWeight:"700",color:"#374151",marginBottom:"7px"}}>Sex</label>
                     <select value={recForm.sex} onChange={e=>setRecForm({...recForm,sex:e.target.value})} style={inp}>
                       <option>Male</option><option>Female</option><option>Other</option>
                     </select>
@@ -527,20 +532,20 @@ export default function PrescriptionPage() {
               {sectionBox(
                 <div>
                   <div style={{marginBottom:"12px"}}>
-                    <div style={{fontWeight:"600",fontSize:"13px",color:"#374151",marginBottom:"8px"}}>Nutritional Status:</div>
-                    <div style={{display:"flex",gap:"20px"}}>
+                    <div style={{fontWeight:"700",fontSize:"14px",color:"#374151",marginBottom:"8px"}}>Nutritional Status:</div>
+                    <div style={{display:"flex",gap:"12px",flexWrap:"wrap"}}>
                       {NUTRITIONAL.map(n=>(
-                        <label key={n} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px"}}>
+                        <label key={n} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px",fontWeight:"500",padding:"8px 14px",borderRadius:"8px",background:recForm.nutritional.includes(n)?"#0f2d6b":"#f0f4ff",color:recForm.nutritional.includes(n)?"white":"#374151",border:"1.5px solid",borderColor:recForm.nutritional.includes(n)?"#0f2d6b":"#c7d2fe",transition:"all 0.15s"}}>
                           <input type="checkbox" checked={recForm.nutritional.includes(n)} onChange={()=>setRecForm({...recForm,nutritional:toggle(recForm.nutritional,n)})} style={cb}/>{n}
                         </label>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <div style={{fontWeight:"600",fontSize:"13px",color:"#374151",marginBottom:"8px"}}>Co-morbidities (KICIO):</div>
-                    <div style={{display:"flex",gap:"16px",flexWrap:"wrap"}}>
+                    <div style={{fontWeight:"700",fontSize:"14px",color:"#374151",marginBottom:"8px"}}>Co-morbidities (KICIO):</div>
+                    <div style={{display:"flex",gap:"12px",flexWrap:"wrap"}}>
                       {COMORBIDITIES.map(c=>(
-                        <label key={c} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px"}}>
+                        <label key={c} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px",fontWeight:"500",padding:"8px 14px",borderRadius:"8px",background:recForm.comorbidities.includes(c)?"#0f2d6b":"#f0f4ff",color:recForm.comorbidities.includes(c)?"white":"#374151",border:"1.5px solid",borderColor:recForm.comorbidities.includes(c)?"#0f2d6b":"#c7d2fe",transition:"all 0.15s"}}>
                           <input type="checkbox" checked={recForm.comorbidities.includes(c)} onChange={()=>setRecForm({...recForm,comorbidities:toggle(recForm.comorbidities,c)})} style={cb}/>{c}
                         </label>
                       ))}
@@ -551,40 +556,41 @@ export default function PrescriptionPage() {
               {sectionBox(
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:"8px"}}>
                   {CHIEF_COMPLAINTS.map(c=>(
-                    <label key={c} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px",padding:"6px",borderRadius:"6px",background:recForm.chief_complaints.includes(c)?"#f0f4ff":"transparent"}}>
+                    <label key={c} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px",fontWeight:"500",padding:"8px 10px",borderRadius:"8px",background:recForm.chief_complaints.includes(c)?"#0f2d6b":"#f0f4ff",color:recForm.chief_complaints.includes(c)?"white":"#374151",border:"1.5px solid",borderColor:recForm.chief_complaints.includes(c)?"#0f2d6b":"#c7d2fe",transition:"all 0.15s"}}>
                       <input type="checkbox" checked={recForm.chief_complaints.includes(c)} onChange={()=>setRecForm({...recForm,chief_complaints:toggle(recForm.chief_complaints,c)})} style={cb}/>{c}
                     </label>
                   ))}
                 </div>,"Chief Complaint *"
               )}
               <button onClick={saveReception} disabled={saving||!recForm.patient_name||!recForm.chief_complaints.length}
-                style={{width:"100%",padding:"16px",background:saving||!recForm.patient_name||!recForm.chief_complaints.length?"#94a3b8":"#0a2463",color:"white",border:"none",borderRadius:"12px",fontSize:"16px",fontWeight:"700",cursor:"pointer",fontFamily:"Georgia, serif"}}>
+                style={{width:"100%",padding:"16px",background:saving||!recForm.patient_name||!recForm.chief_complaints.length?"#e5e7eb":"linear-gradient(135deg,#0f2d6b,#1a56db)",color:saving||!recForm.patient_name||!recForm.chief_complaints.length?"#9ca3af":"white",border:"none",borderRadius:"14px",fontSize:"17px",fontWeight:"700",cursor:"pointer",boxShadow:"0 6px 20px rgba(26,86,219,0.3)"}}>
                 {saving?"Saving...":saved?"✓ Sent to Doctor's Screen":editingTokenId?"Update Patient →":"Send to Doctor →"}
               </button>
             </div>
           )}
 
           {role==="doctor"&&!selectedToken&&(
-            <div style={{background:"white",borderRadius:"16px",padding:"60px",textAlign:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
-              <div style={{fontSize:"48px",marginBottom:"16px"}}>👈</div>
-              <div style={{fontWeight:"700",color:"#0a2463",fontSize:"18px",marginBottom:"8px"}}>Select a patient from the list</div>
-              <div style={{color:"#888",fontSize:"14px"}}>Click a token to open their prescription</div>
-              {tokens.length===0&&<div style={{color:"#f59e0b",fontSize:"13px",marginTop:"12px"}}>⏳ Waiting for reception to add patients...</div>}
+            <div style={{background:"white",borderRadius:"18px",padding:"60px",textAlign:"center",boxShadow:"0 2px 12px rgba(10,36,99,0.07)",border:"1px solid #e8edf5"}}>
+              <div style={{fontSize:"56px",marginBottom:"20px"}}>👈</div>
+              <div style={{fontWeight:"900",color:"#030a1e",fontSize:"22px",marginBottom:"8px",fontFamily:"'Playfair Display',serif"}}>Select a patient from the list</div>
+              <div style={{color:"#9ca3af",fontSize:"15px"}}>Click a token to open their prescription</div>
+              {tokens.length===0&&<div style={{color:"#f59e0b",fontSize:"14px",marginTop:"14px",fontWeight:"600"}}>⏳ Waiting for reception to add patients...</div>}
             </div>
           )}
 
           {role==="doctor"&&selectedToken&&(
             <div>
-              <div style={{background:"#0a2463",borderRadius:"14px",padding:"20px 24px",marginBottom:"20px",display:"flex",alignItems:"flex-start",gap:"16px"}}>
-                <div style={{width:"48px",height:"48px",background:"rgba(255,255,255,0.15)",borderRadius:"10px",display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontWeight:"800",fontSize:"20px",flexShrink:0}}>{selectedToken.token_number}</div>
+              <div style={{background:"linear-gradient(135deg,#0a1628,#1a2f6e)",borderRadius:"18px",padding:"22px 28px",marginBottom:"22px",display:"flex",alignItems:"flex-start",gap:"18px",boxShadow:"0 8px 24px rgba(10,22,40,0.2)",position:"relative",overflow:"hidden"}}>
+                <div style={{position:"absolute",top:"-30px",right:"-30px",width:"140px",height:"140px",borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
+                <div style={{width:"52px",height:"52px",background:"rgba(255,255,255,0.12)",borderRadius:"14px",display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontWeight:"900",fontSize:"22px",flexShrink:0,fontFamily:"'Playfair Display',serif"}}>{selectedToken.token_number}</div>
                 <div style={{flex:1}}>
-                  <div style={{color:"white",fontWeight:"700",fontSize:"18px"}}>{selectedToken.patient_name}</div>
-                  <div style={{color:"rgba(255,255,255,0.7)",fontSize:"13px"}}>Age: {selectedToken.age} · {selectedToken.sex}</div>
-                  {selectedToken.known_allergies&&<div style={{color:"#fca5a5",fontSize:"13px",marginTop:"4px"}}>⚠️ Allergies: {selectedToken.known_allergies}</div>}
+                  <div style={{color:"white",fontWeight:"900",fontSize:"20px",fontFamily:"'Playfair Display',serif",marginBottom:"4px"}}>{selectedToken.patient_name}</div>
+                  <div style={{color:"rgba(255,255,255,0.6)",fontSize:"14px"}}>Age: {selectedToken.age} · {selectedToken.sex}</div>
+                  {selectedToken.known_allergies&&<div style={{color:"#fca5a5",fontSize:"14px",marginTop:"6px",fontWeight:"600"}}>⚠️ Allergies: {selectedToken.known_allergies}</div>}
                   {selectedToken.chief_complaints&&(
-                    <div style={{marginTop:"8px",background:"rgba(255,255,255,0.1)",borderRadius:"8px",padding:"8px 12px"}}>
-                      <div style={{color:"rgba(255,255,255,0.6)",fontSize:"11px",marginBottom:"3px"}}>CHIEF COMPLAINT</div>
-                      <div style={{color:"white",fontSize:"13px"}}>{parseArr(selectedToken.chief_complaints).filter(c=>CHIEF_COMPLAINTS.includes(c)).join(" · ")}</div>
+                    <div style={{marginTop:"10px",background:"rgba(255,255,255,0.08)",borderRadius:"10px",padding:"10px 14px"}}>
+                      <div style={{color:"rgba(255,255,255,0.5)",fontSize:"11px",marginBottom:"4px",letterSpacing:"1.5px",fontWeight:"700"}}>CHIEF COMPLAINT</div>
+                      <div style={{color:"white",fontSize:"14px",fontWeight:"500"}}>{parseArr(selectedToken.chief_complaints).filter(c=>CHIEF_COMPLAINTS.includes(c)).join(" · ")}</div>
                     </div>
                   )}
                 </div>
@@ -597,17 +603,17 @@ export default function PrescriptionPage() {
                   <div style={{display:"flex",flexDirection:"column",gap:"16px"}}>
                     {filteredConditions.map(group=>(
                       <div key={group.category}>
-                        <div style={{fontWeight:"700",fontSize:"12px",color:"#0a2463",marginBottom:"8px",textTransform:"uppercase",letterSpacing:"0.06em"}}>{group.category}</div>
+                        <div style={{fontWeight:"700",fontSize:"12px",color:"#9ca3af",marginBottom:"8px",textTransform:"uppercase",letterSpacing:"1.5px"}}>{group.category}</div>
                         <div style={{display:"flex",flexWrap:"wrap",gap:"8px",paddingLeft:"8px"}}>
                           {group.category==="Fracture"?(
-                            <label style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px",padding:"6px 12px",borderRadius:"6px",background:docForm.clinical_conditions.includes("Fracture")?"#f0f4ff":"transparent",border:"1px solid",borderColor:docForm.clinical_conditions.includes("Fracture")?"#0a2463":"#e8edf5"}}>
+                            <label style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px",fontWeight:"500",padding:"8px 14px",borderRadius:"8px",background:docForm.clinical_conditions.includes("Fracture")?"#0f2d6b":"#f0f4ff",color:docForm.clinical_conditions.includes("Fracture")?"white":"#374151",border:"1.5px solid",borderColor:docForm.clinical_conditions.includes("Fracture")?"#0f2d6b":"#c7d2fe",transition:"all 0.15s"}}>
                               <input type="checkbox" checked={docForm.clinical_conditions.includes("Fracture")} onChange={()=>setDocForm({...docForm,clinical_conditions:toggle(docForm.clinical_conditions,"Fracture")})} style={cb}/>Fracture
                             </label>
                           ):(
                             group.items.map(item=>{
                               const key=`${group.category} - ${item}`;
                               return(
-                                <label key={item} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px",padding:"6px 12px",borderRadius:"6px",background:docForm.clinical_conditions.includes(key)?"#f0f4ff":"transparent",border:"1px solid",borderColor:docForm.clinical_conditions.includes(key)?"#0a2463":"#e8edf5"}}>
+                                <label key={item} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px",fontWeight:"500",padding:"8px 14px",borderRadius:"8px",background:docForm.clinical_conditions.includes(key)?"#0f2d6b":"#f0f4ff",color:docForm.clinical_conditions.includes(key)?"white":"#374151",border:"1.5px solid",borderColor:docForm.clinical_conditions.includes(key)?"#0f2d6b":"#c7d2fe",transition:"all 0.15s"}}>
                                   <input type="checkbox" checked={docForm.clinical_conditions.includes(key)} onChange={()=>setDocForm({...docForm,clinical_conditions:toggle(docForm.clinical_conditions,key)})} style={cb}/>{item}
                                 </label>
                               );
@@ -621,27 +627,27 @@ export default function PrescriptionPage() {
               )}
               {sectionBox(
                 <textarea value={docForm.clinical_findings} onChange={e=>setDocForm({...docForm,clinical_findings:e.target.value})}
-                  placeholder="Examination findings..." rows={3} style={{...inp,resize:"vertical",fontFamily:"Georgia, serif"}}/>,
+                  placeholder="Examination findings..." rows={3} style={{...inp,resize:"vertical"}}/>,
                 "Clinical Findings"
               )}
               {sectionBox(
                 <textarea value={docForm.diagnosis} onChange={e=>setDocForm({...docForm,diagnosis:e.target.value})}
-                  placeholder="Final diagnosis..." rows={2} style={{...inp,resize:"vertical",fontFamily:"Georgia, serif",borderColor:"#a5b4fc"}}/>,
+                  placeholder="Final diagnosis..." rows={2} style={{...inp,resize:"vertical",borderColor:"#a5b4fc"}}/>,
                 "Final Diagnosis *"
               )}
               {sectionBox(
-                <div style={{display:"flex",gap:"20px",flexWrap:"wrap"}}>
+                <div style={{display:"flex",gap:"12px",flexWrap:"wrap"}}>
                   {INSTRUCTIONS.map(ins=>(
-                    <label key={ins} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px"}}>
+                    <label key={ins} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px",fontWeight:"500",padding:"8px 14px",borderRadius:"8px",background:docForm.instructions.includes(ins)?"#0f2d6b":"#f0f4ff",color:docForm.instructions.includes(ins)?"white":"#374151",border:"1.5px solid",borderColor:docForm.instructions.includes(ins)?"#0f2d6b":"#c7d2fe",transition:"all 0.15s"}}>
                       <input type="checkbox" checked={docForm.instructions.includes(ins)} onChange={()=>setDocForm({...docForm,instructions:toggle(docForm.instructions,ins)})} style={cb}/>{ins}
                     </label>
                   ))}
                 </div>,"Instructions"
               )}
               {sectionBox(
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:"8px"}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:"10px"}}>
                   {PHYSIOTHERAPY.map(p=>(
-                    <label key={p} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px"}}>
+                    <label key={p} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"14px",fontWeight:"500",padding:"8px 10px",borderRadius:"8px",background:docForm.physiotherapy.includes(p)?"#0f2d6b":"#f0f4ff",color:docForm.physiotherapy.includes(p)?"white":"#374151",border:"1.5px solid",borderColor:docForm.physiotherapy.includes(p)?"#0f2d6b":"#c7d2fe",transition:"all 0.15s"}}>
                       <input type="checkbox" checked={docForm.physiotherapy.includes(p)} onChange={()=>setDocForm({...docForm,physiotherapy:toggle(docForm.physiotherapy,p)})} style={cb}/>{p}
                     </label>
                   ))}
@@ -652,11 +658,11 @@ export default function PrescriptionPage() {
                   <div style={{position:"relative",marginBottom:"16px"}} ref={medRef}>
                     <input value={medInput} onChange={e=>handleMedSearch(e.target.value)} placeholder="Type 2+ letters to search medicine..." style={inp}/>
                     {medSuggestions.length>0&&(
-                      <div style={{position:"absolute",top:"100%",left:0,right:0,background:"white",borderRadius:"8px",border:"1.5px solid #e0e7ff",boxShadow:"0 8px 24px rgba(0,0,0,0.1)",zIndex:50,maxHeight:"200px",overflowY:"auto"}}>
+                      <div style={{position:"absolute",top:"100%",left:0,right:0,background:"white",borderRadius:"10px",border:"1.5px solid #e0e7ff",boxShadow:"0 8px 24px rgba(0,0,0,0.1)",zIndex:50,maxHeight:"200px",overflowY:"auto",marginTop:"4px"}}>
                         {medSuggestions.map(m=>(
                           <div key={m.id} onClick={()=>addMedicine(m)}
-                            style={{padding:"10px 16px",cursor:"pointer",fontSize:"14px",borderBottom:"1px solid #f0f0f0"}}
-                            onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background="#f0f4ff"}
+                            style={{padding:"11px 16px",cursor:"pointer",fontSize:"14px",fontWeight:"600",borderBottom:"1px solid #f0f4ff",color:"#030a1e"}}
+                            onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background="#eff6ff";(e.currentTarget as HTMLElement).style.color="#030a1e"}}
                             onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background="white"}>
                             {m.name}
                           </div>
@@ -667,15 +673,15 @@ export default function PrescriptionPage() {
                   {selectedMeds.length>0&&(
                     <div style={{display:"flex",flexDirection:"column",gap:"10px"}}>
                       {selectedMeds.map((med,i)=>(
-                        <div key={i} style={{background:"#f8f9fc",borderRadius:"10px",padding:"12px 16px",border:"1px solid #e8edf5"}}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
-                            <div style={{fontWeight:"700",color:"#0a2463",fontSize:"14px"}}>{med.name}</div>
-                            <button onClick={()=>setSelectedMeds(p=>p.filter((_,idx)=>idx!==i))} style={{background:"#fee2e2",color:"#dc2626",border:"none",padding:"4px 10px",borderRadius:"6px",fontSize:"12px",cursor:"pointer",fontFamily:"Georgia, serif"}}>Remove</button>
+                        <div key={i} style={{background:"#f8faff",borderRadius:"12px",padding:"14px 18px",border:"1.5px solid #e0e7ff"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}>
+                            <div style={{fontWeight:"700",color:"#030a1e",fontSize:"15px"}}>{med.name}</div>
+                            <button onClick={()=>setSelectedMeds(p=>p.filter((_,idx)=>idx!==i))} style={{background:"#fee2e2",color:"#dc2626",border:"none",padding:"5px 12px",borderRadius:"7px",fontSize:"13px",cursor:"pointer",fontWeight:"600"}}>Remove</button>
                           </div>
-                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}>
-                            <input placeholder="Dose (e.g. 500mg)" value={med.dose} onChange={e=>setSelectedMeds(p=>p.map((m,idx)=>idx===i?{...m,dose:e.target.value}:m))} style={{padding:"8px 10px",borderRadius:"6px",border:"1px solid #e0e7ff",fontSize:"13px",fontFamily:"Georgia, serif"}}/>
-                            <input placeholder="Frequency (e.g. BD)" value={med.freq} onChange={e=>setSelectedMeds(p=>p.map((m,idx)=>idx===i?{...m,freq:e.target.value}:m))} style={{padding:"8px 10px",borderRadius:"6px",border:"1px solid #e0e7ff",fontSize:"13px",fontFamily:"Georgia, serif"}}/>
-                            <input placeholder="Duration (days)" value={med.days} onChange={e=>setSelectedMeds(p=>p.map((m,idx)=>idx===i?{...m,days:e.target.value}:m))} style={{padding:"8px 10px",borderRadius:"6px",border:"1px solid #e0e7ff",fontSize:"13px",fontFamily:"Georgia, serif"}}/>
+                          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"10px"}}>
+                            <input placeholder="Dose (e.g. 500mg)" value={med.dose} onChange={e=>setSelectedMeds(p=>p.map((m,idx)=>idx===i?{...m,dose:e.target.value}:m))} style={{padding:"9px 12px",borderRadius:"8px",border:"1.5px solid #e0e7ff",fontSize:"14px",color:"#030a1e",fontFamily:"'Inter',sans-serif"}}/>
+                            <input placeholder="Frequency (e.g. BD)" value={med.freq} onChange={e=>setSelectedMeds(p=>p.map((m,idx)=>idx===i?{...m,freq:e.target.value}:m))} style={{padding:"9px 12px",borderRadius:"8px",border:"1.5px solid #e0e7ff",fontSize:"14px",color:"#030a1e",fontFamily:"'Inter',sans-serif"}}/>
+                            <input placeholder="Duration (days)" value={med.days} onChange={e=>setSelectedMeds(p=>p.map((m,idx)=>idx===i?{...m,days:e.target.value}:m))} style={{padding:"9px 12px",borderRadius:"8px",border:"1.5px solid #e0e7ff",fontSize:"14px",color:"#030a1e",fontFamily:"'Inter',sans-serif"}}/>
                           </div>
                         </div>
                       ))}
@@ -686,34 +692,34 @@ export default function PrescriptionPage() {
               {sectionBox(
                 <div style={{display:"flex",alignItems:"center",gap:"24px",flexWrap:"wrap"}}>
                   <div>
-                    <div style={{fontWeight:"600",fontSize:"13px",color:"#374151",marginBottom:"8px"}}>Follow up after:</div>
+                    <div style={{fontWeight:"700",fontSize:"14px",color:"#374151",marginBottom:"8px"}}>Follow up after:</div>
                     <div style={{display:"flex",gap:"16px"}}>
                       {FOLLOW_UP_DAYS.map(f=>(
-                        <label key={f} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"15px",fontWeight:"600"}}>
+                        <label key={f} style={{display:"flex",alignItems:"center",cursor:"pointer",fontSize:"16px",fontWeight:"600"}}>
                           <input type="radio" name="followup" value={f} checked={docForm.follow_up===f} onChange={()=>setDocForm({...docForm,follow_up:f})} style={{marginRight:"6px",accentColor:"#0a2463"}}/>{f} days
                         </label>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <div style={{fontWeight:"600",fontSize:"13px",color:"#374151",marginBottom:"8px"}}>Next Visit:</div>
+                    <div style={{fontWeight:"700",fontSize:"14px",color:"#374151",marginBottom:"8px"}}>Next Visit:</div>
                     <input type="date" value={docForm.next_visit} onChange={e=>setDocForm({...docForm,next_visit:e.target.value})}
-                      style={{padding:"10px 14px",borderRadius:"8px",border:"1.5px solid #e0e7ff",fontSize:"15px",fontFamily:"Georgia, serif"}}/>
+                      style={{padding:"11px 14px",borderRadius:"10px",border:"1.5px solid #e0e7ff",fontSize:"15px",color:"#030a1e",fontFamily:"'Inter',sans-serif"}}/>
                   </div>
                 </div>,"Follow Up"
               )}
-              <div style={{display:"flex",gap:"12px"}}>
+              <div style={{display:"flex",gap:"14px"}}>
                 <button onClick={saveDoctor} disabled={saving||!docForm.diagnosis}
-                  style={{flex:1,padding:"14px",background:saving||!docForm.diagnosis?"#94a3b8":"#0a2463",color:"white",border:"none",borderRadius:"10px",fontSize:"16px",fontWeight:"700",cursor:"pointer",fontFamily:"Georgia, serif"}}>
+                  style={{flex:1,padding:"16px",background:saving||!docForm.diagnosis?"#e5e7eb":"linear-gradient(135deg,#0f2d6b,#1a56db)",color:saving||!docForm.diagnosis?"#9ca3af":"white",border:"none",borderRadius:"14px",fontSize:"17px",fontWeight:"700",cursor:"pointer",boxShadow:saving||!docForm.diagnosis?"none":"0 6px 20px rgba(26,86,219,0.3)"}}>
                   {saving?"Saving...":saved?"✓ Prescription Saved":"Save Prescription"}
                 </button>
                 <button onClick={handlePrint} disabled={!saved}
-                  style={{padding:"14px 24px",background:!saved?"#e2e8f0":"white",color:!saved?"#94a3b8":"#0a2463",border:"2px solid",borderColor:!saved?"#e2e8f0":"#0a2463",borderRadius:"10px",fontSize:"16px",fontWeight:"700",cursor:!saved?"not-allowed":"pointer",fontFamily:"Georgia, serif"}}>
+                  style={{padding:"16px 28px",background:!saved?"#f0f4ff":"white",color:!saved?"#9ca3af":"#030a1e",border:"2px solid",borderColor:!saved?"#e0e7ff":"#1a56db",borderRadius:"14px",fontSize:"17px",fontWeight:"700",cursor:!saved?"not-allowed":"pointer"}}>
                   🖨️ Print
                 </button>
               </div>
               {!saved&&(
-                <div style={{textAlign:"center",fontSize:"12px",color:"#94a3b8",marginTop:"8px"}}>
+                <div style={{textAlign:"center",fontSize:"13px",color:"#9ca3af",marginTop:"10px"}}>
                   Save prescription first to enable printing
                 </div>
               )}

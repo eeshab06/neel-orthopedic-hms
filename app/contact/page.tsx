@@ -17,98 +17,170 @@ export default function ContactPage() {
     setSending(false);
   };
 
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "14px 16px",
+    borderRadius: "12px",
+    border: "1.5px solid #e0e7ff",
+    fontSize: "15px",
+    fontFamily: "'Inter', sans-serif",
+    boxSizing: "border-box",
+    color: "#030a1e",
+    background: "white",
+    outline: "none",
+    transition: "border-color 0.2s",
+  };
+
   return (
-    <div style={{ minHeight: "100vh", background: "#fff", fontFamily: "Georgia, serif" }}>
+    <div style={{ minHeight: "100vh", background: "#eef2ff", fontFamily: "Georgia, serif", overflowX: "hidden" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        .display-font { font-family: 'Playfair Display', Georgia, serif !important; }
+        .body-font { font-family: 'Inter', sans-serif !important; }
+        input::placeholder, textarea::placeholder { color: #9ca3af !important; }
+        input { color: #030a1e !important; }
+        textarea { color: #030a1e !important; resize: vertical; }
+        input:focus, textarea:focus { border-color: #1a56db !important; box-shadow: 0 0 0 3px rgba(26,86,219,0.08) !important; }
+        @media (max-width: 768px) { .contact-grid { grid-template-columns: 1fr !important; } }
+      `}</style>
+
       <PublicNavbar />
 
-      {/* hero */}
-      <div style={{ background: "linear-gradient(135deg, #0a2463 0%, #1a3a8f 100%)", padding: "80px 5%", textAlign: "center" }}>
-        <div style={{ fontSize: "12px", color: "#90caf9", letterSpacing: "2px", fontWeight: "600", marginBottom: "16px" }}>GET IN TOUCH</div>
-        <h1 style={{ color: "white", fontSize: "clamp(32px, 4vw, 52px)", fontWeight: "700", marginBottom: "16px" }}>Contact Us</h1>
-        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "18px", maxWidth: "480px", margin: "0 auto", lineHeight: "1.7", fontWeight: "300" }}>
-          We're here to help. Reach out for appointments, queries, or emergencies.
-        </p>
+      {/* ── HERO ── */}
+      <div style={{
+        background: "linear-gradient(135deg, #0a1628 0%, #1a2f6e 50%, #0f4c8a 100%)",
+        padding: "110px 5% 80px", textAlign: "center", position: "relative", overflow: "hidden"
+      }}>
+        <div style={{ position: "absolute", top: "-80px", left: "-80px", width: "400px", height: "400px", borderRadius: "50%", background: "radial-gradient(circle, rgba(99,179,237,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: "-100px", right: "-80px", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(52,211,153,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "relative", maxWidth: "700px", margin: "0 auto" }}>
+          <div className="body-font" style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "#93c5fd", padding: "8px 20px", borderRadius: "30px", fontSize: "12px", letterSpacing: "2.5px", marginBottom: "28px", fontWeight: "600" }}>
+            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#34d399", display: "inline-block", boxShadow: "0 0 8px #34d399" }} />
+            GET IN TOUCH
+          </div>
+          <h1 className="display-font" style={{ fontSize: "clamp(44px, 6vw, 80px)", fontWeight: "900", lineHeight: "1.05", letterSpacing: "-3px", marginBottom: "24px" }}>
+            <span style={{ background: "linear-gradient(135deg, #93c5fd 0%, #34d399 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              Contact Us
+            </span>
+          </h1>
+          <p className="body-font" style={{ color: "rgba(255,255,255,0.65)", fontSize: "18px", lineHeight: "1.8" }}>
+            We're here to help. Reach out for appointments, queries, or emergencies.
+          </p>
+        </div>
       </div>
 
-      <div style={{ padding: "80px 5%", maxWidth: "1100px", margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "60px", alignItems: "start" }}>
-          <div>
-            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#0a2463", marginBottom: "32px" }}>Hospital Information</h2>
+      {/* ── MAIN ── */}
+      <div style={{ padding: "80px 5% 100px", maxWidth: "1100px", margin: "0 auto" }}>
+        <div className="contact-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "48px", alignItems: "start" }}>
+
+          {/* Left: Info cards */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {[
-              { icon: "📍", title: "Address", lines: ["1st Floor, Shrinath Apartment,", "Goddev Naka, B.P. Road,", "Bhayander East, Thane,", "Mumbai — 401105, Maharashtra"] },
-              { icon: "📞", title: "Phone", lines: ["+91 70210 94941", "+91 95943 14023"] },
-              { icon: "🕐", title: "OPD Timings", lines: ["Morning: 10:00 AM – 1:15 PM", "Evening: 3:30 PM – 6:45 PM", "Days: Monday – Sunday"] },
-              { icon: "🚨", title: "Emergency", lines: ["Available 24 hours, 7 days a week", "Call: +91 70210 94941"] },
+              { icon: "📍", title: "ADDRESS", color: "#1a56db", bg: "#eff6ff", lines: ["1st Floor, Shrinath Apartment,", "Goddev Naka, B.P. Road,", "Bhayander East, Thane,", "Mumbai — 401105, Maharashtra"] },
+              { icon: "📞", title: "PHONE", color: "#059669", bg: "#ecfdf5", lines: ["+91 70210 94941", "+91 95943 14023"] },
+              { icon: "🕐", title: "OPD TIMINGS", color: "#7c3aed", bg: "#f5f3ff", lines: ["Mon–Sat Morning: 10:00 AM – 1:15 PM", "Mon–Sat Evening: 3:30 PM – 6:45 PM", "Sunday Morning only: 10:00 AM – 1:00 PM"] },
+              { icon: "🚨", title: "EMERGENCY", color: "#dc2626", bg: "#fff1f2", lines: ["Available 24 hours, 7 days a week", "Call: +91 70210 94941"] },
             ].map((item, i) => (
-              <div key={i} style={{ display: "flex", gap: "20px", marginBottom: "32px" }}>
-                <div style={{ fontSize: "24px", flexShrink: 0, marginTop: "2px" }}>{item.icon}</div>
+              <div key={i} style={{ background: "white", borderRadius: "18px", padding: "22px 26px", border: "1px solid #e8edf5", boxShadow: "0 2px 12px rgba(10,36,99,0.04)", display: "flex", gap: "16px", alignItems: "flex-start" }}>
+                <div style={{ width: "46px", height: "46px", borderRadius: "13px", background: item.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>
+                  {item.icon}
+                </div>
                 <div>
-                  <div style={{ fontWeight: "700", color: "#0a2463", fontSize: "16px", marginBottom: "8px" }}>{item.title}</div>
+                  <div className="body-font" style={{ fontWeight: "700", color: item.color, fontSize: "10px", letterSpacing: "2px", marginBottom: "8px" }}>{item.title}</div>
                   {item.lines.map((line, j) => (
-                    <div key={j} style={{ color: "#555", fontSize: "14px", lineHeight: "1.8" }}>{line}</div>
+                    <div key={j} className="body-font" style={{ color: "#374151", fontSize: "14px", lineHeight: "1.8" }}>{line}</div>
                   ))}
                 </div>
               </div>
             ))}
-            <div style={{ background: "#f0f4ff", borderRadius: "16px", padding: "24px", border: "1px solid #e0e7ff" }}>
-              <div style={{ fontWeight: "700", color: "#0a2463", marginBottom: "8px" }}>📍 Find us on Google Maps</div>
-              <a href="https://maps.google.com/?q=Neel+Orthopaedic+Multispeciality+Hospital+Goddev+Naka+Bhayander+East+Mumbai"
-                target="_blank" rel="noopener noreferrer"
-                style={{ color: "#1a73e8", fontSize: "14px", textDecoration: "none", fontWeight: "600" }}>
-                Open in Google Maps →
-              </a>
-            </div>
+
+            <a href="https://maps.app.goo.gl/1SzWbWRuMnLrNidV8"
+              target="_blank" rel="noopener noreferrer" className="body-font"
+              style={{ display: "flex", alignItems: "center", gap: "14px", background: "linear-gradient(135deg, #0f2d6b, #1a56db)", borderRadius: "18px", padding: "20px 26px", textDecoration: "none", transition: "all 0.2s", boxShadow: "0 4px 16px rgba(26,86,219,0.25)" }}
+              onMouseEnter={e => (e.currentTarget.style.transform = "translateY(-2px)")}
+              onMouseLeave={e => (e.currentTarget.style.transform = "translateY(0)")}>
+              <div style={{ fontSize: "26px" }}>📍</div>
+              <div>
+                <div style={{ color: "white", fontWeight: "700", fontSize: "15px" }}>Open in Google Maps</div>
+                <div style={{ color: "rgba(255,255,255,0.6)", fontSize: "13px", marginTop: "2px" }}>Get directions to the hospital →</div>
+              </div>
+            </a>
           </div>
 
-          <div>
-            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#0a2463", marginBottom: "8px" }}>Send an Enquiry</h2>
-            <p style={{ color: "#888", fontSize: "14px", marginBottom: "28px" }}>We'll get back to you within 24 hours.</p>
+          {/* Right: Form */}
+          <div style={{ background: "white", borderRadius: "24px", padding: "40px", boxShadow: "0 4px 24px rgba(10,36,99,0.07)", border: "1px solid #e8edf5" }}>
             {sent ? (
-              <div style={{ background: "#f0fdf4", borderRadius: "16px", padding: "40px", textAlign: "center", border: "2px solid #bbf7d0" }}>
-                <div style={{ fontSize: "48px", marginBottom: "16px" }}>✅</div>
-                <div style={{ fontWeight: "700", color: "#16a34a", fontSize: "20px", marginBottom: "8px" }}>Message Sent!</div>
-                <div style={{ color: "#666", fontSize: "14px" }}>We'll contact you at {form.phone} shortly.</div>
+              <div style={{ textAlign: "center", padding: "40px 20px" }}>
+                <div style={{ fontSize: "56px", marginBottom: "20px" }}>✅</div>
+                <h3 className="display-font" style={{ color: "#030a1e", fontSize: "28px", fontWeight: "900", marginBottom: "10px" }}>Message Sent!</h3>
+                <p className="body-font" style={{ color: "#6b7280", fontSize: "15px", marginBottom: "28px", lineHeight: "1.7" }}>
+                  We'll contact you at <strong style={{ color: "#030a1e" }}>{form.phone}</strong> shortly.
+                </p>
                 <button onClick={() => { setForm({ name: "", phone: "", message: "" }); setSent(false); }}
-                  style={{ marginTop: "20px", background: "#0a2463", color: "white", border: "none", padding: "12px 24px", borderRadius: "8px", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}>
-                  Send another
+                  className="body-font"
+                  style={{ background: "linear-gradient(135deg, #0f2d6b, #1a56db)", color: "white", border: "none", padding: "13px 28px", borderRadius: "32px", fontSize: "15px", fontWeight: "700", cursor: "pointer" }}>
+                  Send Another
                 </button>
               </div>
             ) : (
-              <div style={{ background: "#f8f9fc", borderRadius: "16px", padding: "32px", border: "1px solid #e8edf5" }}>
-                {[
-                  { label: "Your Name *", key: "name", type: "text", placeholder: "Full name" },
-                  { label: "Phone Number *", key: "phone", type: "tel", placeholder: "10-digit mobile number" },
-                ].map(f => (
-                  <div key={f.key} style={{ marginBottom: "16px" }}>
-                    <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>{f.label}</label>
-                    <input type={f.type} placeholder={f.placeholder}
-                      value={form[f.key as keyof typeof form]}
-                      onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                      style={{ width: "100%", padding: "12px 14px", borderRadius: "8px", border: "1.5px solid #e0e7ff", fontSize: "15px", fontFamily: "Georgia, serif", boxSizing: "border-box" }} />
-                  </div>
-                ))}
-                <div style={{ marginBottom: "24px" }}>
-                  <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>Message *</label>
+              <>
+                <div style={{ marginBottom: "32px" }}>
+                  <h2 className="display-font" style={{ color: "#030a1e", fontSize: "28px", fontWeight: "900", letterSpacing: "-0.5px", marginBottom: "8px" }}>Send an Enquiry</h2>
+                  <p className="body-font" style={{ color: "#9ca3af", fontSize: "14px" }}>We'll get back to you within 24 hours.</p>
+                </div>
+
+                <div style={{ marginBottom: "18px" }}>
+                  <label className="body-font" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "8px" }}>Your Name *</label>
+                  <input type="text" placeholder="e.g. Rahul Sharma" value={form.name}
+                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    style={inputStyle} />
+                </div>
+
+                <div style={{ marginBottom: "18px" }}>
+                  <label className="body-font" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "8px" }}>Phone Number *</label>
+                  <input type="tel" placeholder="10-digit mobile number" value={form.phone}
+                    onChange={e => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+                    style={inputStyle} />
+                </div>
+
+                <div style={{ marginBottom: "28px" }}>
+                  <label className="body-font" style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "8px" }}>Message *</label>
                   <textarea placeholder="How can we help you?" rows={5} value={form.message}
                     onChange={e => setForm({ ...form, message: e.target.value })}
-                    style={{ width: "100%", padding: "12px 14px", borderRadius: "8px", border: "1.5px solid #e0e7ff", fontSize: "15px", fontFamily: "Georgia, serif", boxSizing: "border-box", resize: "vertical" }} />
+                    style={inputStyle} />
                 </div>
-                <button onClick={handleSubmit} disabled={sending || !form.name || !form.phone || !form.message}
-                  style={{ width: "100%", padding: "14px", background: sending || !form.name || !form.phone || !form.message ? "#94a3b8" : "#0a2463", color: "white", border: "none", borderRadius: "10px", fontSize: "16px", fontWeight: "700", cursor: "pointer", fontFamily: "Georgia, serif" }}>
+
+                <button onClick={handleSubmit}
+                  disabled={sending || !form.name || !form.phone || !form.message}
+                  className="body-font"
+                  style={{
+                    width: "100%", padding: "15px", border: "none", borderRadius: "14px",
+                    fontSize: "16px", fontWeight: "700", cursor: sending || !form.name || !form.phone || !form.message ? "not-allowed" : "pointer",
+                    background: sending || !form.name || !form.phone || !form.message ? "#e5e7eb" : "linear-gradient(135deg, #0f2d6b, #1a56db)",
+                    color: sending || !form.name || !form.phone || !form.message ? "#9ca3af" : "white",
+                    transition: "all 0.2s",
+                    boxShadow: sending || !form.name || !form.phone || !form.message ? "none" : "0 4px 16px rgba(26,86,219,0.3)",
+                  }}>
                   {sending ? "Sending..." : "Send Message →"}
                 </button>
-                <div style={{ marginTop: "20px", textAlign: "center" }}>
-                  <div style={{ color: "#888", fontSize: "13px", marginBottom: "8px" }}>Or book directly</div>
-                  <Link href="/book" style={{ color: "#1a73e8", fontWeight: "700", textDecoration: "none", fontSize: "14px" }}>Book OPD Appointment →</Link>
+
+                <div style={{ marginTop: "20px", textAlign: "center", paddingTop: "20px", borderTop: "1px solid #f0f4ff" }}>
+                  <p className="body-font" style={{ color: "#9ca3af", fontSize: "13px", marginBottom: "8px" }}>Or book directly</p>
+                  <Link href="/book" className="body-font" style={{ color: "#1a56db", fontWeight: "700", textDecoration: "none", fontSize: "15px" }}>
+                    Book OPD Appointment →
+                  </Link>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>
       </div>
 
-      <div style={{ background: "#06142e", padding: "24px 5%", textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: "13px" }}>
-        © 2026 Neel Orthopaedic Multispeciality Hospital — pain to painless
+      <div style={{ background: "#020710", padding: "24px 5%", textAlign: "center" }}>
+        <span className="body-font" style={{ color: "rgba(255,255,255,0.25)", fontSize: "13px" }}>
+          © 2026 Neel Orthopaedic Multispeciality Hospital · pain to painless
+        </span>
       </div>
     </div>
   );
