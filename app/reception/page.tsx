@@ -20,6 +20,14 @@ interface Enquiry {
   responded: boolean;
 }
 
+interface FollowUp {
+  patient_name: string;
+  phone: string;
+  follow_up_date: string;
+  diagnosis: string;
+  next_visit: string;
+}
+
 function formatIST(utcString: string) {
   const normalized = utcString.replace(" ", "T").split(".")[0] + "+00:00";
   const date = new Date(normalized);
@@ -32,7 +40,7 @@ function formatIST(utcString: string) {
 
 export default function ReceptionForm() {
   const { user, loading: authLoading, signOut } = useAuth("/reception");
-  const [activeTab, setActiveTab] = useState<"queue" | "enquiries">("queue");
+  const [activeTab, setActiveTab] = useState<"queue" | "enquiries" | "followups">("queue");
 
   // Queue state
   const [tokens, setTokens] = useState<Token[]>([]);
@@ -52,7 +60,12 @@ export default function ReceptionForm() {
   const [filterResponded, setFilterResponded] = useState<"all" | "pending" | "responded">("all");
   const [markingId, setMarkingId] = useState<number | null>(null);
 
+  // Follow-ups state
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [followUpsLoading, setFollowUpsLoading] = useState(false);
+
   const today = new Date().toISOString().split("T")[0];
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
   // Fetch queue — client-side today filter fix
   useEffect(() => {
@@ -63,7 +76,6 @@ export default function ReceptionForm() {
         .select(`appt_id, token_number, status, patient:patient_id (name, phone, dob), slot:slot_id (slot_date)`)
         .eq("status", "booked")
         .order("token_number", { ascending: true });
-      // Filter today client-side
       const todayData = (data || []).filter((a: any) => (a.slot as any)?.slot_date === today);
       setTokens(todayData as any);
       setLoading(false);
@@ -80,6 +92,43 @@ export default function ReceptionForm() {
     if (!user || activeTab !== "enquiries") return;
     fetchEnquiries();
   }, [user, activeTab]);
+
+  // Fetch follow-ups
+  useEffect(() => {
+    if (!user || activeTab !== "followups") return;
+    fetchFollowUps();
+  }, [user, activeTab]);
+
+  const fetchFollowUps = async () => {
+    setFollowUpsLoading(true);
+    const { data } = await supabase
+      .from("opd_prescription")
+      .select("patient_name, follow_up_date, diagnosis, next_visit, token_number")
+     .eq("next_visit", tomorrow)
+.not("next_visit", "is", null);
+
+    if (data && data.length > 0) {
+      // Get phone numbers for each patient
+      const enriched = await Promise.all(data.map(async (p: any) => {
+        const { data: apptData } = await supabase
+          .from("appointment")
+          .select("patient:patient_id (name, phone)")
+          .eq("token_number", p.token_number)
+          .single();
+        return {
+          patient_name: p.patient_name,
+          phone: (apptData?.patient as any)?.phone || "",
+          follow_up_date: p.follow_up_date,
+          diagnosis: p.diagnosis || "",
+          next_visit: p.next_visit || "",
+        };
+      }));
+      setFollowUps(enriched as FollowUp[]);
+    } else {
+      setFollowUps([]);
+    }
+    setFollowUpsLoading(false);
+  };
 
   const fetchEnquiries = async () => {
     setEnquiriesLoading(true);
@@ -144,6 +193,11 @@ export default function ReceptionForm() {
 
   const pendingCount = enquiries.filter(e => !e.responded).length;
 
+  const buildWtpMessage = (f: FollowUp) => {
+    const msg = `Hello ${f.patient_name}, this is Neel Orthopaedic Multispeciality Hospital. Your follow-up visit is scheduled for tomorrow (${f.follow_up_date}). Please book your appointment at localhost:3000/book and carry your previous prescription file. — Neel Orthopaedic Hospital`;
+    return `https://wa.me/91${f.phone}?text=${encodeURIComponent(msg)}`;
+  };
+
   const inp: React.CSSProperties = {
     width: "100%", padding: "11px 14px", borderRadius: "8px",
     border: "1.5px solid #e0e7ff", fontSize: "16px",
@@ -169,6 +223,7 @@ export default function ReceptionForm() {
         <div style={{ display: "flex", gap: "0" }}>
           {[
             { key: "queue", label: "🏥 OPD Queue", badge: tokens.length },
+            { key: "followups", label: "📅 Follow-up Reminders", badge: followUps.length },
             { key: "enquiries", label: "📩 Enquiries", badge: pendingCount },
           ].map(tab => (
             <button key={tab.key}
@@ -183,7 +238,7 @@ export default function ReceptionForm() {
               {tab.label}
               {tab.badge > 0 && (
                 <span style={{
-                  background: tab.key === "enquiries" && pendingCount > 0 ? "#dc2626" : "#0a2463",
+                  background: tab.key === "enquiries" && pendingCount > 0 ? "#dc2626" : tab.key === "followups" ? "#f59e0b" : "#0a2463",
                   color: "white", borderRadius: "20px", padding: "2px 8px",
                   fontSize: "11px", fontWeight: "700",
                 }}>
@@ -198,7 +253,6 @@ export default function ReceptionForm() {
       {/* ── OPD QUEUE TAB ── */}
       {activeTab === "queue" && (
         <div style={{ padding: "24px 5%", display: "grid", gridTemplateColumns: "320px", gap: "24px" }}>
-          {/* Token list */}
           <div style={{ background: "white", borderRadius: "16px", padding: "20px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", height: "fit-content" }}>
             <div style={{ fontWeight: "700", color: "#0a2463", fontSize: "18px", marginBottom: "16px" }}>Today's Queue</div>
             <input placeholder="Search by token or name..." value={search} onChange={e => setSearch(e.target.value)}
@@ -230,7 +284,6 @@ export default function ReceptionForm() {
             )}
           </div>
 
-          {/* Form panel */}
           <div>
             {!selectedToken ? (
               <div style={{ background: "white", borderRadius: "16px", padding: "60px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -285,6 +338,60 @@ export default function ReceptionForm() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── FOLLOW-UP REMINDERS TAB ── */}
+      {activeTab === "followups" && (
+        <div style={{ padding: "24px 5%", maxWidth: "900px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+            <div>
+              <h2 style={{ color: "#0a2463", fontSize: "20px", fontWeight: "700", margin: 0 }}>📅 Tomorrow's Follow-up Patients</h2>
+              <p style={{ color: "#888", fontSize: "13px", margin: "4px 0 0" }}>
+                {followUps.length > 0 ? `${followUps.length} patient${followUps.length > 1 ? "s" : ""} due for follow-up tomorrow (${tomorrow})` : `No follow-ups scheduled for tomorrow (${tomorrow})`}
+              </p>
+            </div>
+            <button onClick={fetchFollowUps}
+              style={{ padding: "8px 16px", borderRadius: "20px", border: "1.5px solid #e0e7ff", background: "white", color: "#6b7280", fontSize: "13px", cursor: "pointer", fontFamily: "Georgia, serif" }}>
+              🔄 Refresh
+            </button>
+          </div>
+
+          {followUpsLoading ? (
+            <div style={{ textAlign: "center", padding: "60px", color: "#888" }}>Loading follow-ups...</div>
+          ) : followUps.length === 0 ? (
+            <div style={{ background: "white", borderRadius: "16px", padding: "60px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: "48px", marginBottom: "16px" }}>✅</div>
+              <div style={{ fontWeight: "700", color: "#0a2463", fontSize: "18px", marginBottom: "8px" }}>No follow-ups tomorrow!</div>
+              <div style={{ color: "#888", fontSize: "14px" }}>Check back later or refresh.</div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              {followUps.map((f, idx) => (
+                <div key={idx} style={{
+                  background: "white", borderRadius: "16px", padding: "24px 28px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                  border: "1.5px solid #fef3c7",
+                  borderLeft: "5px solid #f59e0b",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                      <div style={{ width: "48px", height: "48px", borderRadius: "14px", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>📅</div>
+                      <div>
+                        <div style={{ fontWeight: "800", color: "#030a1e", fontSize: "18px", marginBottom: "4px" }}>{f.patient_name}</div>
+                        <div style={{ color: "#6b7280", fontSize: "14px" }}>📱 {f.phone}</div>
+                        {f.diagnosis && <div style={{ color: "#6b7280", fontSize: "13px", marginTop: "2px" }}>🔍 {f.diagnosis}</div>}
+                      </div>
+                    </div>
+                    <a href={buildWtpMessage(f)} target="_blank" rel="noopener noreferrer"
+                      style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "12px 22px", borderRadius: "12px", background: "#25D366", color: "white", textDecoration: "none", fontSize: "15px", fontWeight: "700", boxShadow: "0 4px 12px rgba(37,211,102,0.3)", whiteSpace: "nowrap" }}>
+                      💬 Send WhatsApp Reminder
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -11,6 +11,7 @@ const supabase = createClient(
 
 interface Patient { patient_id: number; name: string; uhid: string; phone: string; dob: string; address: string; }
 interface HistoryRecord { record_type: string; record_date: string; description: string; doctor_name: string; status: string; }
+interface Prescription { id: number; token_number: number; chief_complaints: string; clinical_findings: string; diagnosis: string; treatment: string; medication: string; physiotherapy: string; follow_up_date: string; next_visit: string; known_allergies: string; }
 
 const TYPE_STYLE: Record<string, { bg: string; color: string; icon: string; grad: string }> = {
   "OPD Appointment": { bg: "#dbeafe", color: "#1e40af", icon: "🏥", grad: "linear-gradient(135deg,#0f2d6b,#1a56db)" },
@@ -27,12 +28,15 @@ export default function PatientHistoryPage() {
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [filterType, setFilterType] = useState("all");
+  const [expandedPrescriptions, setExpandedPrescriptions] = useState<Record<number, Prescription | null>>({});
+  const [prescriptionLoading, setPrescriptionLoading] = useState<Record<number, boolean>>({});
 
-  const searchPatients = async () => {
-    if (search.trim().length < 2) return;
+  const searchPatients = async (val?: string) => {
+    const q = val ?? search;
+    if (q.trim().length < 2) return;
     setLoading(true);
     const { data } = await supabase.from("patient").select("patient_id, name, uhid, phone, dob, address")
-      .or(`name.ilike.%${search}%,uhid.ilike.%${search}%,phone.ilike.%${search}%`).limit(10);
+      .or(`name.ilike.%${q}%,uhid.ilike.%${q}%,phone.ilike.%${q}%`).limit(10);
     if (data) setSearchResults(data as Patient[]);
     setLoading(false);
   };
@@ -41,6 +45,7 @@ export default function PatientHistoryPage() {
     setSelectedPatient(patient);
     setHistoryLoading(true);
     setHistory([]);
+    setExpandedPrescriptions({});
     const { data } = await supabase.rpc("get_patient_history", { p_patient_id: patient.patient_id });
     if (data) {
       const sorted = [...data].sort((a: HistoryRecord, b: HistoryRecord) =>
@@ -48,6 +53,20 @@ export default function PatientHistoryPage() {
       setHistory(sorted);
     }
     setHistoryLoading(false);
+  };
+
+  const togglePrescription = async (idx: number, description: string) => {
+    if (expandedPrescriptions[idx] !== undefined) {
+      setExpandedPrescriptions(prev => { const n = { ...prev }; delete n[idx]; return n; });
+      return;
+    }
+    const tokenMatch = description.match(/Token #(\d+)/);
+    if (!tokenMatch) return;
+    const tokenNumber = parseInt(tokenMatch[1]);
+    setPrescriptionLoading(prev => ({ ...prev, [idx]: true }));
+    const { data } = await supabase.from("opd_prescription").select("*").eq("token_number", tokenNumber).single();
+    setExpandedPrescriptions(prev => ({ ...prev, [idx]: data as Prescription || null }));
+    setPrescriptionLoading(prev => ({ ...prev, [idx]: false }));
   };
 
   const calcAge = (dob: string) => {
@@ -84,10 +103,11 @@ export default function PatientHistoryPage() {
         <div style={{ background:"white", borderRadius:20, padding:32, boxShadow:"0 2px 14px rgba(10,36,99,0.07)", marginBottom:24, border:"1px solid #e8edf5" }}>
           <h3 style={{ margin:"0 0 20px", color:"#030a1e", fontSize:20, fontWeight:900, fontFamily:"'Playfair Display', serif" }}>Search Patient</h3>
           <div style={{ display:"flex", gap:12 }}>
-            <input type="text" placeholder="Search by name, UHID, or phone number..." value={search}
-              onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === "Enter" && searchPatients()}
+            <input type="text" placeholder="Search by name or phone number..." value={search}
+              onChange={e => { setSearch(e.target.value); searchPatients(e.target.value); }}
+              onKeyDown={e => e.key === "Enter" && searchPatients()}
               style={{ flex:1, padding:"13px 18px", border:"1.5px solid #e0e7ff", borderRadius:12, fontSize:15, outline:"none", color:"#030a1e", background:"#fafbff" }} />
-            <button onClick={searchPatients} disabled={loading}
+            <button onClick={() => searchPatients()} disabled={loading}
               style={{ background:loading?"#e5e7eb":"linear-gradient(135deg,#0f2d6b,#1a56db)", color:loading?"#9ca3af":"white", border:"none", borderRadius:12, padding:"13px 32px", fontSize:15, cursor:loading?"not-allowed":"pointer", fontWeight:700, boxShadow:loading?"none":"0 4px 16px rgba(26,86,219,0.3)", transition:"all 0.2s" }}>
               {loading ? "Searching…" : "Search"}
             </button>
@@ -170,6 +190,8 @@ export default function PatientHistoryPage() {
                 <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
                   {filteredHistory.map((h, idx) => {
                     const ts = TYPE_STYLE[h.record_type] || { bg:"#f1f5f9", color:"#475569", icon:"📋", grad:"#475569" };
+                    const isExpanded = expandedPrescriptions[idx] !== undefined;
+                    const prescription = expandedPrescriptions[idx];
                     return (
                       <div key={idx} style={{ display:"flex", gap:20, alignItems:"flex-start" }}>
                         <div style={{ width:42, height:42, borderRadius:"50%", background:ts.grad, border:"3px solid white", boxShadow:"0 3px 12px rgba(0,0,0,0.15)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0, zIndex:1 }}>{ts.icon}</div>
@@ -185,6 +207,42 @@ export default function PatientHistoryPage() {
                             <span>👨‍⚕️ {h.doctor_name}</span>
                             <span style={{ background:"white", borderRadius:6, padding:"2px 10px", fontSize:12, fontWeight:600, color:"#6b7280", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>{h.status}</span>
                           </div>
+
+                          {h.record_type === "OPD Appointment" && (
+                            <div style={{ marginTop:12 }}>
+                              <button onClick={() => togglePrescription(idx, h.description)}
+                                style={{ background:"white", border:"1.5px solid #bfdbfe", borderRadius:8, padding:"7px 16px", fontSize:13, fontWeight:700, color:"#1a56db", cursor:"pointer" }}>
+                                {prescriptionLoading[idx] ? "Loading…" : isExpanded ? "▲ Hide Prescription" : "▼ View Prescription"}
+                              </button>
+
+                              {isExpanded && (
+                                <div style={{ marginTop:14, background:"white", borderRadius:12, padding:"20px 22px", border:"1.5px solid #e0e7ff" }}>
+                                  {!prescription ? (
+                                    <p style={{ color:"#9ca3af", fontSize:14, margin:0 }}>No prescription found for this visit.</p>
+                                  ) : (
+                                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+                                      {[
+                                        { label:"Chief Complaints", value: prescription.chief_complaints },
+                                        { label:"Known Allergies", value: prescription.known_allergies },
+                                        { label:"Clinical Findings", value: prescription.clinical_findings },
+                                        { label:"Diagnosis", value: prescription.diagnosis },
+                                        { label:"Treatment", value: prescription.treatment },
+                                        { label:"Medication", value: prescription.medication },
+                                        { label:"Physiotherapy", value: prescription.physiotherapy },
+                                        { label:"Follow-up Date", value: prescription.follow_up_date },
+                                        { label:"Next Visit", value: prescription.next_visit },
+                                      ].filter(f => f.value).map(f => (
+                                        <div key={f.label} style={{ gridColumn: ["Chief Complaints","Clinical Findings","Treatment","Medication"].includes(f.label) ? "1 / -1" : "auto" }}>
+                                          <div style={{ fontSize:11, fontWeight:800, color:"#9ca3af", letterSpacing:"1px", marginBottom:4 }}>{f.label.toUpperCase()}</div>
+                                          <div style={{ fontSize:14, color:"#030a1e", fontWeight:600, lineHeight:1.6 }}>{f.value}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
