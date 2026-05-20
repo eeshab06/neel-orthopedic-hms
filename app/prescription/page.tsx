@@ -277,7 +277,7 @@ export default function PrescriptionPage() {
   };
 
   const fetchTokens = async () => {
-    const {data} = await supabase.from("opd_prescription").select("*").eq("date",today).order("token_number");
+    const {data} = await supabase.from("opd_prescription").select("*").eq("date",today).eq("filled_by_doctor", false).order("token_number");
     if (data) {
       setTokens(data as Token[]);
       if (selectedToken) {
@@ -373,6 +373,7 @@ export default function PrescriptionPage() {
       filled_by_doctor:true,
     }).eq("id",selectedToken.id);
     if (error){alert("Save failed: "+error.message);setSaving(false);return;}
+    await supabase.from("appointment").update({ status: "completed" }).eq("token_number", selectedToken.token_number);
     await fetchTokens(); setSaved(true); setSaving(false);
   };
 
