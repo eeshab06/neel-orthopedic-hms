@@ -137,8 +137,8 @@ export default function StockPage() {
     if (!editImplant) return;
     setSaving(true); setImplantSaveMsg("");
     const { error } = await supabase.from("implant").update({ quantity_in_stock: parseInt(editImplantQty) || 0, unit_price: parseFloat(editImplantPrice) || 0, reorder_level: parseInt(editImplantReorder) || 2 }).eq("implant_id", editImplant.implant_id);
-    if (error) { setImplantSaveMsg("❌ Error saving."); }
-    else { setImplantSaveMsg("✅ Saved!"); await fetchMedicines(); setTimeout(() => { setEditImplant(null); setImplantSaveMsg(""); }, 1000); }
+    if (error) { setImplantSaveMsg("Error saving."); }
+    else { setImplantSaveMsg("Saved!"); await fetchMedicines(); setTimeout(() => { setEditImplant(null); setImplantSaveMsg(""); }, 1000); }
     setSaving(false);
   };
 
@@ -146,8 +146,8 @@ export default function StockPage() {
     if (!editItem) return;
     setSaving(true); setSaveMsg("");
     const { error } = await supabase.from("medicine_list").update({ stock_qty: parseInt(editQty) || 0, reorder_level: parseInt(editReorder) || REORDER_DEFAULT, mrp: parseFloat(editMrp) || 0, batch_no: editBatch, exp_date: editExp || null }).eq("id", editItem.id);
-    if (error) { setSaveMsg("❌ Error saving. Try again."); }
-    else { setSaveMsg("✅ Saved successfully!"); await fetchMedicines(); setTimeout(() => { setEditItem(null); setSaveMsg(""); }, 1000); }
+    if (error) { setSaveMsg("Error saving. Try again."); }
+    else { setSaveMsg("Saved successfully!"); await fetchMedicines(); setTimeout(() => { setEditItem(null); setSaveMsg(""); }, 1000); }
     setSaving(false);
   };
 
@@ -162,120 +162,125 @@ export default function StockPage() {
   const openEdit = (m: Medicine) => { setEditItem(m); setEditQty(String(m.stock_qty ?? 0)); setEditReorder(String(m.reorder_level ?? REORDER_DEFAULT)); setEditMrp(String(m.mrp ?? 0)); setEditBatch(m.batch_no ?? ""); setEditExp(m.exp_date ?? ""); setSaveMsg(""); };
   const handleSort = (col: "name" | "stock" | "expiry") => { if (sortBy === col) setSortDir(d => d === "asc" ? "desc" : "asc"); else { setSortBy(col); setSortDir("asc"); } };
 
-  if (authLoading || !user) return <div style={{ minHeight: "100vh", background: "#f0f4ff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", color: "#0a2463", fontSize: 18 }}>Loading…</div>;
+  if (authLoading || !user) return <div style={{ minHeight: "100vh", background: "#eef4ff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans',sans-serif", color: "#0a2463" }}>Loading…</div>;
 
-  const inp: React.CSSProperties = { width: "100%", padding: "11px 14px", border: "1.5px solid #e0e7ff", borderRadius: 10, fontSize: 15, outline: "none", boxSizing: "border-box", fontFamily: "'Inter',sans-serif", background: "#fff", color: "#030a1e" };
-  const lbl: React.CSSProperties = { display: "block", fontSize: 13, color: "#374151", marginBottom: 6, fontWeight: 600, fontFamily: "'Inter',sans-serif" };
+  const inp: React.CSSProperties = { width: "100%", padding: "10px 14px", border: "1px solid #e3e6ef", borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "'DM Sans',sans-serif", background: "#fff", color: "#1e293b" };
+  const lbl: React.CSSProperties = { display: "block", fontSize: 12, color: "#64748b", marginBottom: 5, fontWeight: 600, fontFamily: "'DM Sans',sans-serif" };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f0f4ff", fontFamily: "'Inter',sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#eef4ff", fontFamily: "'DM Sans',sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap');
-        input,select,textarea{color:#030a1e!important;font-size:15px!important;font-family:'Inter',sans-serif!important;}
-        input::placeholder,textarea::placeholder{color:#9ca3af!important;}
-        input:focus,select:focus,textarea:focus{border-color:#1a56db!important;outline:none!important;}
-        th,td{font-family:'Inter',sans-serif;font-size:14px;}
-        button{font-family:'Inter',sans-serif!important;}
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        input,select,textarea{color:#1e293b!important;font-size:14px!important;font-family:'DM Sans',sans-serif!important;}
+        input::placeholder,textarea::placeholder{color:#94a3b8!important;}
+        input:focus,select:focus,textarea:focus{border-color:#0a2463!important;outline:none!important;}
+        th,td{font-family:'DM Sans',sans-serif;font-size:13px;}
+        button{font-family:'DM Sans',sans-serif!important;}
       `}</style>
       <StaffNavbar user={user} onSignOut={signOut} />
 
-      {/* Premium header */}
-      <div style={{ background: "linear-gradient(135deg,#0a1628,#1a2f6e)", padding: "20px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      {/* Header */}
+      <div style={{ background: "#0a2463", padding: "20px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
-          <h1 style={{ color: "#fff", margin: 0, fontSize: 26, fontWeight: 900, fontFamily: "'Playfair Display',serif", letterSpacing: "-0.5px" }}>💊 Stock Management</h1>
-          <p style={{ color: "rgba(255,255,255,0.6)", margin: "4px 0 0", fontSize: 14 }}>Neel Orthopaedic Hospital — Pharmacy & Implant Inventory</p>
+          <h1 style={{ color: "#fff", margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: "-0.3px" }}>Stock Management</h1>
+          <p style={{ color: "rgba(255,255,255,0.5)", margin: "3px 0 0", fontSize: 13 }}>Neel Orthopaedic Hospital — Pharmacy & Implant Inventory</p>
         </div>
         <button onClick={() => activeTab === "implants" ? setShowAddImplant(true) : setShowAdd(true)}
-          style={{ background: "linear-gradient(135deg,#1a56db,#60a5fa)", color: "#fff", border: "none", borderRadius: 12, padding: "12px 24px", fontFamily: "'Inter',sans-serif", fontSize: 15, cursor: "pointer", fontWeight: 700, boxShadow: "0 4px 14px rgba(26,86,219,0.35)" }}>
+          style={{ background: "white", color: "#0a2463", border: "none", borderRadius: 8, padding: "10px 22px", fontSize: 13, cursor: "pointer", fontWeight: 700 }}>
           {activeTab === "implants" ? "+ Add Implant" : "+ Add Medicine"}
         </button>
       </div>
 
-      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px 24px" }}>
-        {/* Stat cards - gradient */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 14, marginBottom: 24 }}>
+      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px" }}>
+
+        {/* Stat cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: 12, marginBottom: 20 }}>
           {[
-            { label: "Total Medicines", value: totalMeds, bg: "linear-gradient(135deg,#0f2d6b,#1a56db)", icon: "💊" },
-            { label: "OPD Stock", value: opdCount, bg: "linear-gradient(135deg,#064e3b,#10b981)", icon: "🏥" },
-            { label: "IPD Medicines", value: ipdCount, bg: "linear-gradient(135deg,#1e1b4b,#7c3aed)", icon: "🩺" },
-            { label: "Implants", value: implants.length, bg: "linear-gradient(135deg,#0c4a6e,#0ea5e9)", icon: "🦴" },
-            { label: "Low Stock", value: lowStockCount, bg: "linear-gradient(135deg,#7f1d1d,#ef4444)", icon: "⚠️" },
-            { label: "Expiring / Expired", value: expiringCount, bg: "linear-gradient(135deg,#92400e,#f59e0b)", icon: "📅" },
+            { label: "Total Medicines", value: totalMeds, border: "#93c5fd" },
+            { label: "OPD Stock", value: opdCount, border: "#93c5fd" },
+            { label: "IPD Medicines", value: ipdCount, border: "#c4b5fd" },
+            { label: "Implants", value: implants.length, border: "#93c5fd" },
+            { label: "Low Stock", value: lowStockCount, border: "#fca5a5" },
+            { label: "Expiring / Expired", value: expiringCount, border: "#fcd34d" },
           ].map(s => (
-            <div key={s.label} style={{ background: s.bg, borderRadius: 14, padding: "20px 16px", color: "white", boxShadow: "0 4px 14px rgba(0,0,0,0.15)" }}>
-              <div style={{ fontSize: 26, marginBottom: 6 }}>{s.icon}</div>
-              <div style={{ fontSize: 32, fontWeight: 900, fontFamily: "'Playfair Display',serif", letterSpacing: "-1px", lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
-              <div style={{ fontSize: 12, opacity: 0.8 }}>{s.label}</div>
+            <div key={s.label} style={{ background: "#dbeafe", borderRadius: 10, padding: "16px 14px", border: "1px solid #bfdbfe", borderLeft: `5px solid ${s.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+              <div style={{ fontSize: 11, color: "#475569", marginBottom: 6, fontWeight: 500 }}>{s.label}</div>
+              <div style={{ fontSize: 30, fontWeight: 700, color: "#0a2463", lineHeight: 1 }}>{s.value}</div>
             </div>
           ))}
         </div>
 
+        {/* Alert banner */}
         {(lowStockCount > 0 || expiringCount > 0 || lowImplants > 0) && (
-          <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 12, padding: "14px 20px", marginBottom: 20, display: "flex", gap: 24, flexWrap: "wrap" }}>
-            {lowStockCount > 0 && <span style={{ color: "#dc2626", fontWeight: 600, fontSize: 14 }}>⚠️ {lowStockCount} medicine{lowStockCount > 1 ? "s" : ""} at or below reorder level</span>}
-            {lowImplants > 0 && <span style={{ color: "#0891b2", fontWeight: 600, fontSize: 14 }}>🦴 {lowImplants} implant{lowImplants > 1 ? "s" : ""} at or below reorder level</span>}
-            {expiringCount > 0 && <span style={{ color: "#d97706", fontWeight: 600, fontSize: 14 }}>📅 {expiringCount} item{expiringCount > 1 ? "s" : ""} expiring within 3 months{expiredCount > 0 ? ` (${expiredCount} expired)` : ""}</span>}
-            <span style={{ color: "#888", fontSize: 13, marginLeft: "auto" }}>Click the relevant tab to view</span>
+          <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "12px 18px", marginBottom: 18, display: "flex", gap: 20, flexWrap: "wrap", alignItems: "center" }}>
+            {lowStockCount > 0 && <span style={{ color: "#9f1239", fontWeight: 600, fontSize: 13 }}>⚠️ {lowStockCount} medicine{lowStockCount > 1 ? "s" : ""} at or below reorder level</span>}
+            {lowImplants > 0 && <span style={{ color: "#1e40af", fontWeight: 600, fontSize: 13 }}>🦴 {lowImplants} implant{lowImplants > 1 ? "s" : ""} at or below reorder level</span>}
+            {expiringCount > 0 && <span style={{ color: "#854d0e", fontWeight: 600, fontSize: 13 }}>📅 {expiringCount} item{expiringCount > 1 ? "s" : ""} expiring within 3 months{expiredCount > 0 ? ` (${expiredCount} expired)` : ""}</span>}
+            <span style={{ color: "#94a3b8", fontSize: 12, marginLeft: "auto" }}>Click the relevant tab to view</span>
           </div>
         )}
 
-        <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 2px 10px rgba(10,36,99,0.07)", marginBottom: 4 }}>
-          <div style={{ padding: "16px 20px", borderBottom: "1px solid #e8eef8", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e3e6ef", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+          {/* Search */}
+          <div style={{ padding: "14px 18px", borderBottom: "1px solid #f1f5f9", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             <input type="text"
-              placeholder={activeTab === "implants" ? "🔍  Search implants..." : "🔍  Search by name, batch, packing..."}
+              placeholder={activeTab === "implants" ? "Search implants..." : "Search by name, batch, packing..."}
               value={activeTab === "implants" ? implantSearch : search}
               onChange={e => activeTab === "implants" ? setImplantSearch(e.target.value) : setSearch(e.target.value)}
               style={{ ...inp, flex: 1, minWidth: 240 }} />
-            <span style={{ color: "#888", fontSize: 14 }}>{activeTab === "implants" ? filteredImplants.length : filtered.length} results</span>
+            <span style={{ color: "#94a3b8", fontSize: 13 }}>{activeTab === "implants" ? filteredImplants.length : filtered.length} results</span>
           </div>
 
-          <div style={{ display: "flex", borderBottom: "1px solid #e8eef8", padding: "0 16px", overflowX: "auto" }}>
+          {/* Tabs */}
+          <div style={{ display: "flex", borderBottom: "1px solid #f1f5f9", padding: "0 14px", overflowX: "auto" }}>
             {([
               { key: "all", label: `All (${totalMeds})` },
               { key: "opd", label: `OPD (${opdCount})` },
               { key: "ipd", label: `IPD Medicines (${ipdCount})` },
-              { key: "low", label: `⚠️ Low Stock (${lowStockCount})` },
-              { key: "expiring", label: `📅 Expiring (${expiringCount})` },
-              { key: "implants", label: `🦴 Implants (${implants.length})` },
+              { key: "low", label: `Low Stock (${lowStockCount})` },
+              { key: "expiring", label: `Expiring (${expiringCount})` },
+              { key: "implants", label: `Implants (${implants.length})` },
             ] as { key: TabType; label: string }[]).map(t => (
               <button key={t.key} onClick={() => setActiveTab(t.key)}
-                style={{ padding: "14px 18px", border: "none", background: "transparent", fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: activeTab === t.key ? 700 : 500, color: activeTab === t.key ? "#0a2463" : "#9ca3af", borderBottom: activeTab === t.key ? "3px solid #1a56db" : "3px solid transparent", cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s" }}>
+                style={{ padding: "12px 16px", border: "none", background: "transparent", fontSize: 13, fontWeight: activeTab === t.key ? 700 : 500, color: activeTab === t.key ? "#0a2463" : "#94a3b8", borderBottom: activeTab === t.key ? "2px solid #0a2463" : "2px solid transparent", cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.15s" }}>
                 {t.label}
               </button>
             ))}
           </div>
 
+          {/* Table */}
           {activeTab === "implants" ? (
-            loading ? <div style={{ textAlign: "center", padding: 60, color: "#888", fontSize: 15 }}>Loading…</div> : (
+            loading ? <div style={{ textAlign: "center", padding: 60, color: "#94a3b8", fontSize: 14 }}>Loading…</div> : (
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
-                    <tr style={{ background: "#f8faff" }}>
+                    <tr style={{ background: "#f8fafc" }}>
                       {["#", "Implant Name", "Manufacturer", "Stock Qty", "Reorder Level", "Unit Price (₹)", "Status", "Action"].map(h => (
-                        <th key={h} style={{ padding: "12px 16px", textAlign: "left", color: "#374151", fontWeight: 700, borderBottom: "2px solid #e8eef8", whiteSpace: "nowrap" }}>{h}</th>
+                        <th key={h} style={{ padding: "11px 14px", textAlign: "left", color: "#475569", fontWeight: 600, borderBottom: "1px solid #e3e6ef", whiteSpace: "nowrap", fontSize: 12 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredImplants.length === 0 ? (
-                      <tr><td colSpan={8} style={{ textAlign: "center", padding: 40, color: "#aaa", fontSize: 15 }}>No implants found.</td></tr>
+                      <tr><td colSpan={8} style={{ textAlign: "center", padding: 40, color: "#94a3b8", fontSize: 14 }}>No implants found.</td></tr>
                     ) : filteredImplants.map((imp, idx) => {
                       const low = imp.quantity_in_stock <= imp.reorder_level;
                       return (
-                        <tr key={imp.implant_id} style={{ background: low ? "#fff7ed" : idx % 2 === 0 ? "#fff" : "#f8faff" }}>
-                          <td style={{ padding: "12px 16px", color: "#9ca3af" }}>{imp.implant_id}</td>
-                          <td style={{ padding: "12px 16px", fontWeight: 700, color: "#030a1e", fontSize: 15 }}>{imp.name}</td>
-                          <td style={{ padding: "12px 16px", color: "#555" }}>{imp.manufacturer}</td>
-                          <td style={{ padding: "12px 16px", fontWeight: 800, color: low ? "#dc2626" : "#16a34a", fontSize: 16 }}>{imp.quantity_in_stock}</td>
-                          <td style={{ padding: "12px 16px", color: "#555" }}>{imp.reorder_level}</td>
-                          <td style={{ padding: "12px 16px", color: "#555" }}>₹{Number(imp.unit_price).toLocaleString()}</td>
-                          <td style={{ padding: "12px 16px" }}>
-                            {low ? <span style={{ background: "#fee2e2", color: "#dc2626", borderRadius: 6, padding: "3px 10px", fontSize: 12, fontWeight: 700 }}>LOW STOCK</span>
-                              : <span style={{ background: "#dcfce7", color: "#16a34a", borderRadius: 6, padding: "3px 10px", fontSize: 12, fontWeight: 700 }}>OK</span>}
+                        <tr key={imp.implant_id} style={{ background: low ? "#fff7ed" : idx % 2 === 0 ? "#fff" : "#f8fafc" }}>
+                          <td style={{ padding: "11px 14px", color: "#94a3b8", fontSize: 12 }}>{imp.implant_id}</td>
+                          <td style={{ padding: "11px 14px", fontWeight: 600, color: "#0a2463" }}>{imp.name}</td>
+                          <td style={{ padding: "11px 14px", color: "#475569" }}>{imp.manufacturer}</td>
+                          <td style={{ padding: "11px 14px", fontWeight: 700, color: low ? "#9f1239" : "#166534", fontSize: 15 }}>{imp.quantity_in_stock}</td>
+                          <td style={{ padding: "11px 14px", color: "#475569" }}>{imp.reorder_level}</td>
+                          <td style={{ padding: "11px 14px", color: "#475569" }}>₹{Number(imp.unit_price).toLocaleString()}</td>
+                          <td style={{ padding: "11px 14px" }}>
+                            {low
+                              ? <span style={{ background: "#fff1f2", color: "#9f1239", border: "1px solid #fecdd3", borderRadius: 5, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>Low</span>
+                              : <span style={{ background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0", borderRadius: 5, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>OK</span>}
                           </td>
-                          <td style={{ padding: "12px 16px" }}>
+                          <td style={{ padding: "11px 14px" }}>
                             <button onClick={() => { setEditImplant(imp); setEditImplantQty(String(imp.quantity_in_stock)); setEditImplantPrice(String(imp.unit_price)); setEditImplantReorder(String(imp.reorder_level)); setImplantSaveMsg(""); }}
-                              style={{ background: "#eff6ff", color: "#1a56db", border: "1.5px solid #bfdbfe", borderRadius: 8, padding: "6px 16px", fontSize: 13, cursor: "pointer", fontWeight: 700 }}>Edit</button>
+                              style={{ background: "#eff6ff", color: "#1e40af", border: "1px solid #bfdbfe", borderRadius: 6, padding: "5px 14px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>Edit</button>
                           </td>
                         </tr>
                       );
@@ -286,12 +291,12 @@ export default function StockPage() {
             )
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
-                  <tr style={{ background: "#f8faff" }}>
+                  <tr style={{ background: "#f8fafc" }}>
                     {[{ label: "Medicine Name", key: "name" as const }, { label: "Type", key: null }, { label: "Packing", key: null }, { label: "Batch No.", key: null }, { label: "Expiry", key: "expiry" as const }, { label: "Stock Qty", key: "stock" as const }, { label: "Reorder Lvl", key: null }, { label: "MRP (₹)", key: null }, { label: "Status", key: null }, { label: "Action", key: null }].map(col => (
                       <th key={col.label} onClick={col.key ? () => handleSort(col.key!) : undefined}
-                        style={{ padding: "12px 16px", textAlign: "left", color: "#374151", fontWeight: 700, borderBottom: "2px solid #e8eef8", cursor: col.key ? "pointer" : "default", userSelect: "none", whiteSpace: "nowrap" }}>
+                        style={{ padding: "11px 14px", textAlign: "left", color: "#475569", fontWeight: 600, borderBottom: "1px solid #e3e6ef", cursor: col.key ? "pointer" : "default", userSelect: "none", whiteSpace: "nowrap", fontSize: 12 }}>
                         {col.label}{col.key && sortBy === col.key && (sortDir === "asc" ? " ↑" : " ↓")}
                       </th>
                     ))}
@@ -299,36 +304,39 @@ export default function StockPage() {
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={10} style={{ textAlign: "center", padding: 40, color: "#aaa", fontSize: 15 }}>No medicines found.</td></tr>
+                    <tr><td colSpan={10} style={{ textAlign: "center", padding: 40, color: "#94a3b8", fontSize: 14 }}>No medicines found.</td></tr>
                   ) : filtered.map((m, idx) => {
                     const low = m.stock_qty <= (m.reorder_level ?? REORDER_DEFAULT);
                     const expSoon = isExpiringSoon(m.exp_date);
                     const expired = isExpired(m.exp_date);
-                    const rowBg = idx % 2 === 0 ? "#fff" : "#f8faff";
+                    const rowBg = idx % 2 === 0 ? "#fff" : "#f8fafc";
                     const alertBg = expired ? "#fff1f2" : expSoon ? "#fffbeb" : low ? "#fff7ed" : rowBg;
                     return (
                       <tr key={m.id} style={{ background: alertBg }}>
-                        <td style={{ padding: "12px 16px", fontWeight: 600, color: "#030a1e", maxWidth: 280, fontSize: 15 }}>{m.name}</td>
-                        <td style={{ padding: "12px 16px" }}>
-                          <span style={{ background: m.type === "opd" ? "#dbeafe" : "#ede9fe", color: m.type === "opd" ? "#1e40af" : "#6d28d9", borderRadius: 6, padding: "3px 10px", fontWeight: 600, fontSize: 12 }}>{m.type.toUpperCase()}</span>
+                        <td style={{ padding: "11px 14px", fontWeight: 600, color: "#1e293b", maxWidth: 280 }}>{m.name}</td>
+                        <td style={{ padding: "11px 14px" }}>
+                          <span style={{ background: m.type === "opd" ? "#eff6ff" : "#f5f3ff", color: m.type === "opd" ? "#1e40af" : "#6d28d9", border: `1px solid ${m.type === "opd" ? "#bfdbfe" : "#ddd6fe"}`, borderRadius: 5, padding: "2px 8px", fontWeight: 600, fontSize: 11 }}>{m.type.toUpperCase()}</span>
                         </td>
-                        <td style={{ padding: "12px 16px", color: "#555" }}>{m.packing || "—"}</td>
-                        <td style={{ padding: "12px 16px", color: "#555", fontSize: 13 }}>{m.batch_no || "—"}</td>
-                        <td style={{ padding: "12px 16px", color: expired ? "#dc2626" : expSoon ? "#d97706" : "#555", fontWeight: expired || expSoon ? 600 : 400 }}>
+                        <td style={{ padding: "11px 14px", color: "#64748b" }}>{m.packing || "—"}</td>
+                        <td style={{ padding: "11px 14px", color: "#64748b" }}>{m.batch_no || "—"}</td>
+                        <td style={{ padding: "11px 14px", color: expired ? "#9f1239" : expSoon ? "#854d0e" : "#64748b", fontWeight: expired || expSoon ? 600 : 400 }}>
                           {formatExpDate(m.exp_date)}{expired && " 🔴"}{!expired && expSoon && " ⚠️"}
                         </td>
-                        <td style={{ padding: "12px 16px", fontWeight: 700, color: low ? "#dc2626" : "#16a34a", fontSize: 16 }}>{m.stock_qty}</td>
-                        <td style={{ padding: "12px 16px", color: "#555" }}>{m.reorder_level ?? REORDER_DEFAULT}</td>
-                        <td style={{ padding: "12px 16px", color: "#555" }}>{m.mrp > 0 ? `₹${Number(m.mrp).toFixed(2)}` : "—"}</td>
-                        <td style={{ padding: "12px 16px" }}>
-                          {expired ? <span style={{ background: "#fee2e2", color: "#dc2626", borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: 700 }}>EXPIRED</span>
-                            : expSoon ? <span style={{ background: "#fef3c7", color: "#d97706", borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: 700 }}>EXP SOON</span>
-                            : low ? <span style={{ background: "#fee2e2", color: "#dc2626", borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: 700 }}>LOW STOCK</span>
-                            : <span style={{ background: "#dcfce7", color: "#16a34a", borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: 700 }}>OK</span>}
+                        <td style={{ padding: "11px 14px", fontWeight: 700, color: low ? "#9f1239" : "#166534", fontSize: 15 }}>{m.stock_qty}</td>
+                        <td style={{ padding: "11px 14px", color: "#64748b" }}>{m.reorder_level ?? REORDER_DEFAULT}</td>
+                        <td style={{ padding: "11px 14px", color: "#64748b" }}>{m.mrp > 0 ? `₹${Number(m.mrp).toFixed(2)}` : "—"}</td>
+                        <td style={{ padding: "11px 14px" }}>
+                          {expired
+                            ? <span style={{ background: "#fff1f2", color: "#9f1239", border: "1px solid #fecdd3", borderRadius: 5, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>Expired</span>
+                            : expSoon
+                            ? <span style={{ background: "#fffbeb", color: "#854d0e", border: "1px solid #fde68a", borderRadius: 5, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>Exp Soon</span>
+                            : low
+                            ? <span style={{ background: "#fff1f2", color: "#9f1239", border: "1px solid #fecdd3", borderRadius: 5, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>Low Stock</span>
+                            : <span style={{ background: "#f0fdf4", color: "#166634", border: "1px solid #bbf7d0", borderRadius: 5, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>OK</span>}
                         </td>
-                        <td style={{ padding: "12px 16px" }}>
+                        <td style={{ padding: "11px 14px" }}>
                           <button onClick={() => openEdit(m)}
-                            style={{ background: "#eff6ff", color: "#1a56db", border: "1.5px solid #bfdbfe", borderRadius: 8, padding: "6px 16px", fontSize: 13, cursor: "pointer", fontWeight: 700 }}>Edit</button>
+                            style={{ background: "#eff6ff", color: "#1e40af", border: "1px solid #bfdbfe", borderRadius: 6, padding: "5px 14px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>Edit</button>
                         </td>
                       </tr>
                     );
@@ -340,30 +348,32 @@ export default function StockPage() {
         </div>
       </div>
 
+      {/* EDIT IMPLANT MODAL */}
       {editImplant && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "#fff", borderRadius: 20, padding: 32, width: 440, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", fontFamily: "'Inter',sans-serif" }}>
-            <h3 style={{ margin: "0 0 4px", color: "#030a1e", fontSize: 20, fontWeight: 900, fontFamily: "'Playfair Display',serif" }}>Edit Implant</h3>
-            <p style={{ margin: "0 0 20px", color: "#888", fontSize: 14 }}>{editImplant.name} — {editImplant.manufacturer}</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 20 }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: 28, width: 420, boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+            <h3 style={{ margin: "0 0 4px", color: "#0a2463", fontSize: 17, fontWeight: 700 }}>Edit Implant</h3>
+            <p style={{ margin: "0 0 18px", color: "#94a3b8", fontSize: 13 }}>{editImplant.name} — {editImplant.manufacturer}</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
               {[{ label: "Stock Qty", value: editImplantQty, set: setEditImplantQty }, { label: "Unit Price (₹)", value: editImplantPrice, set: setEditImplantPrice }, { label: "Reorder Level", value: editImplantReorder, set: setEditImplantReorder }].map(f => (
                 <div key={f.label}><label style={lbl}>{f.label}</label><input type="number" value={f.value} onChange={e => f.set(e.target.value)} style={inp} /></div>
               ))}
             </div>
-            {implantSaveMsg && <p style={{ color: implantSaveMsg.startsWith("✅") ? "#16a34a" : "#dc2626", fontSize: 13, margin: "0 0 12px" }}>{implantSaveMsg}</p>}
-            <div style={{ display: "flex", gap: 12 }}>
-              <button onClick={handleSaveImplant} disabled={saving} style={{ flex: 1, background: "linear-gradient(135deg,#0f2d6b,#1a56db)", color: "#fff", border: "none", borderRadius: 10, padding: 13, fontSize: 15, cursor: saving ? "not-allowed" : "pointer", fontWeight: 700 }}>{saving ? "Saving…" : "Save Changes"}</button>
-              <button onClick={() => setEditImplant(null)} style={{ flex: 1, background: "#f1f5f9", color: "#333", border: "none", borderRadius: 10, padding: 13, fontSize: 15, cursor: "pointer" }}>Cancel</button>
+            {implantSaveMsg && <p style={{ color: "#166534", fontSize: 13, margin: "0 0 12px" }}>{implantSaveMsg}</p>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={handleSaveImplant} disabled={saving} style={{ flex: 1, background: "#0a2463", color: "#fff", border: "none", borderRadius: 8, padding: 11, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>{saving ? "Saving…" : "Save Changes"}</button>
+              <button onClick={() => setEditImplant(null)} style={{ flex: 1, background: "#f6f8fb", color: "#64748b", border: "1px solid #e3e6ef", borderRadius: 8, padding: 11, fontSize: 14, cursor: "pointer" }}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* ADD IMPLANT MODAL */}
       {showAddImplant && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "#fff", borderRadius: 20, padding: 32, width: 500, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", fontFamily: "'Inter',sans-serif" }}>
-            <h3 style={{ margin: "0 0 20px", color: "#030a1e", fontSize: 20, fontWeight: 900, fontFamily: "'Playfair Display',serif" }}>Add New Implant</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: 28, width: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+            <h3 style={{ margin: "0 0 18px", color: "#0a2463", fontSize: 17, fontWeight: 700 }}>Add New Implant</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
               {[{ label: "Implant Name *", key: "name", ph: "e.g. Titanium Knee Implant", full: true }, { label: "Manufacturer", key: "manufacturer", ph: "e.g. Zimmer Biomet" }, { label: "Stock Qty", key: "quantity_in_stock", ph: "0" }, { label: "Unit Price (₹)", key: "unit_price", ph: "0.00" }, { label: "Reorder Level", key: "reorder_level", ph: "2" }].map(f => (
                 <div key={f.key} style={{ gridColumn: (f as any).full ? "1 / -1" : "auto" }}>
                   <label style={lbl}>{f.label}</label>
@@ -371,62 +381,64 @@ export default function StockPage() {
                 </div>
               ))}
             </div>
-            {implantError && <p style={{ color: "#dc2626", fontSize: 13, margin: "0 0 12px" }}>{implantError}</p>}
-            <div style={{ display: "flex", gap: 12 }}>
-              <button onClick={handleAddImplant} style={{ flex: 1, background: "linear-gradient(135deg,#0f2d6b,#1a56db)", color: "#fff", border: "none", borderRadius: 10, padding: 13, fontSize: 15, cursor: "pointer", fontWeight: 700 }}>Add Implant</button>
-              <button onClick={() => { setShowAddImplant(false); setImplantError(""); }} style={{ flex: 1, background: "#f1f5f9", color: "#333", border: "none", borderRadius: 10, padding: 13, fontSize: 15, cursor: "pointer" }}>Cancel</button>
+            {implantError && <p style={{ color: "#9f1239", fontSize: 13, margin: "0 0 12px" }}>{implantError}</p>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={handleAddImplant} style={{ flex: 1, background: "#0a2463", color: "#fff", border: "none", borderRadius: 8, padding: 11, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>Add Implant</button>
+              <button onClick={() => { setShowAddImplant(false); setImplantError(""); }} style={{ flex: 1, background: "#f6f8fb", color: "#64748b", border: "1px solid #e3e6ef", borderRadius: 8, padding: 11, fontSize: 14, cursor: "pointer" }}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* EDIT MEDICINE MODAL */}
       {editItem && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "#fff", borderRadius: 20, padding: 32, width: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", fontFamily: "'Inter',sans-serif" }}>
-            <h3 style={{ margin: "0 0 4px", color: "#030a1e", fontSize: 20, fontWeight: 900, fontFamily: "'Playfair Display',serif" }}>Edit Stock Entry</h3>
-            <p style={{ margin: "0 0 20px", color: "#888", fontSize: 13 }}>{editItem.name}</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: 28, width: 460, boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+            <h3 style={{ margin: "0 0 4px", color: "#0a2463", fontSize: 17, fontWeight: 700 }}>Edit Stock Entry</h3>
+            <p style={{ margin: "0 0 18px", color: "#94a3b8", fontSize: 13 }}>{editItem.name}</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
               {[{ label: "Stock Qty", value: editQty, set: setEditQty, type: "number" }, { label: "Reorder Level", value: editReorder, set: setEditReorder, type: "number" }, { label: "MRP (₹)", value: editMrp, set: setEditMrp, type: "number" }, { label: "Batch No.", value: editBatch, set: setEditBatch, type: "text" }].map(f => (
                 <div key={f.label}><label style={lbl}>{f.label}</label><input type={f.type} value={f.value} onChange={e => f.set(e.target.value)} style={inp} /></div>
               ))}
             </div>
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 16 }}>
               <label style={lbl}>Expiry Date (MM/YYYY)</label>
               <input type="text" value={editExp} onChange={e => setEditExp(e.target.value)} placeholder="e.g. 06/2027" style={inp} />
             </div>
-            {saveMsg && <p style={{ color: saveMsg.startsWith("✅") ? "#16a34a" : "#dc2626", fontSize: 13, margin: "0 0 12px" }}>{saveMsg}</p>}
-            <div style={{ display: "flex", gap: 12 }}>
-              <button onClick={handleSaveEdit} disabled={saving} style={{ flex: 1, background: "linear-gradient(135deg,#0f2d6b,#1a56db)", color: "#fff", border: "none", borderRadius: 10, padding: 13, fontSize: 15, cursor: saving ? "not-allowed" : "pointer", fontWeight: 700 }}>{saving ? "Saving…" : "Save Changes"}</button>
-              <button onClick={() => setEditItem(null)} style={{ flex: 1, background: "#f1f5f9", color: "#333", border: "none", borderRadius: 10, padding: 13, fontSize: 15, cursor: "pointer" }}>Cancel</button>
+            {saveMsg && <p style={{ color: "#166534", fontSize: 13, margin: "0 0 12px" }}>{saveMsg}</p>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={handleSaveEdit} disabled={saving} style={{ flex: 1, background: "#0a2463", color: "#fff", border: "none", borderRadius: 8, padding: 11, fontSize: 14, cursor: saving ? "not-allowed" : "pointer", fontWeight: 600 }}>{saving ? "Saving…" : "Save Changes"}</button>
+              <button onClick={() => setEditItem(null)} style={{ flex: 1, background: "#f6f8fb", color: "#64748b", border: "1px solid #e3e6ef", borderRadius: 8, padding: 11, fontSize: 14, cursor: "pointer" }}>Cancel</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* ADD MEDICINE MODAL */}
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ background: "#fff", borderRadius: 20, padding: 32, width: 520, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", fontFamily: "'Inter',sans-serif", maxHeight: "90vh", overflowY: "auto" }}>
-            <h3 style={{ margin: "0 0 20px", color: "#030a1e", fontSize: 20, fontWeight: 900, fontFamily: "'Playfair Display',serif" }}>Add New Medicine / Item</h3>
-            <div style={{ marginBottom: 14 }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: 28, width: 500, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", maxHeight: "90vh", overflowY: "auto" }}>
+            <h3 style={{ margin: "0 0 18px", color: "#0a2463", fontSize: 17, fontWeight: 700 }}>Add New Medicine</h3>
+            <div style={{ marginBottom: 12 }}>
               <label style={lbl}>Medicine / Item Name *</label>
               <input type="text" value={addName} onChange={e => setAddName(e.target.value)} placeholder="e.g. PARACETAMOL 500MG TAB" style={inp} />
             </div>
-            <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 12 }}>
               <label style={lbl}>Type</label>
               <select value={addType} onChange={e => setAddType(e.target.value as "opd" | "ipd")} style={inp}>
                 <option value="opd">OPD (Pharmacy)</option>
                 <option value="ipd">IPD / Surgical</option>
               </select>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
               {[{ label: "Stock Qty", value: addQty, set: setAddQty, ph: "0" }, { label: "Reorder Level", value: addReorder, set: setAddReorder, ph: "10" }, { label: "MRP (₹)", value: addMrp, set: setAddMrp, ph: "0.00" }, { label: "Packing", value: addPacking, set: setAddPacking, ph: "10TAB / 500ML" }, { label: "Batch No.", value: addBatch, set: setAddBatch, ph: "e.g. ABC1234" }, { label: "Expiry (MM/YYYY)", value: addExp, set: setAddExp, ph: "06/2027" }].map(f => (
                 <div key={f.label}><label style={lbl}>{f.label}</label><input type="text" value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.ph} style={inp} /></div>
               ))}
             </div>
-            {addError && <p style={{ color: "#dc2626", fontSize: 13, margin: "0 0 12px" }}>{addError}</p>}
-            <div style={{ display: "flex", gap: 12 }}>
-              <button onClick={handleAddMedicine} style={{ flex: 1, background: "linear-gradient(135deg,#0f2d6b,#1a56db)", color: "#fff", border: "none", borderRadius: 10, padding: 13, fontSize: 15, cursor: "pointer", fontWeight: 700 }}>Add Medicine</button>
-              <button onClick={() => { setShowAdd(false); setAddError(""); }} style={{ flex: 1, background: "#f1f5f9", color: "#333", border: "none", borderRadius: 10, padding: 13, fontSize: 15, cursor: "pointer" }}>Cancel</button>
+            {addError && <p style={{ color: "#9f1239", fontSize: 13, margin: "0 0 12px" }}>{addError}</p>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={handleAddMedicine} style={{ flex: 1, background: "#0a2463", color: "#fff", border: "none", borderRadius: 8, padding: 11, fontSize: 14, cursor: "pointer", fontWeight: 600 }}>Add Medicine</button>
+              <button onClick={() => { setShowAdd(false); setAddError(""); }} style={{ flex: 1, background: "#f6f8fb", color: "#64748b", border: "1px solid #e3e6ef", borderRadius: 8, padding: 11, fontSize: 14, cursor: "pointer" }}>Cancel</button>
             </div>
           </div>
         </div>

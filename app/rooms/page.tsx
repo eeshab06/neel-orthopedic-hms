@@ -189,80 +189,83 @@ export default function RoomsPage() {
 
   const filteredRooms = rooms.filter(r => { if (filter === "available") return !r.is_occupied; if (filter === "occupied") return r.is_occupied; if (filter === "icu") return r.room_type === "ICU"; return true; });
   const stats = { total: rooms.length, occupied: rooms.filter(r => r.is_occupied).length, available: rooms.filter(r => !r.is_occupied).length, icu: rooms.filter(r => r.room_type === "ICU" && r.is_occupied).length };
-  const getRoomColor = (r: Room) => r.room_type === "ICU" ? (r.is_occupied ? "#fee2e2" : "#fef3c7") : (r.is_occupied ? "#fef2f2" : "#f0fdf4");
-  const getRoomBorder = (r: Room) => r.room_type === "ICU" ? (r.is_occupied ? "#fca5a5" : "#fde68a") : (r.is_occupied ? "#fca5a5" : "#bbf7d0");
   const getDaysSince = (d: string) => Math.ceil((new Date().getTime() - new Date(d).getTime()) / (1000 * 60 * 60 * 24));
 
-  if (authLoading || !user) return <div style={{ minHeight: "100vh", background: "#f0f4ff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", color: "#0a2463", fontSize: 18 }}>Loading…</div>;
+  if (authLoading || !user) return <div style={{ minHeight: "100vh", background: "#eef4ff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans',sans-serif", color: "#0a2463" }}>Loading…</div>;
 
-  const inp: React.CSSProperties = { width: "100%", padding: "11px 14px", border: "1.5px solid #e0e7ff", borderRadius: 10, fontSize: 15, outline: "none", boxSizing: "border-box", fontFamily: "'Inter',sans-serif", background: "#fff", color: "#030a1e" };
+  const inp: React.CSSProperties = { width: "100%", padding: "10px 14px", border: "1px solid #e3e6ef", borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "'DM Sans',sans-serif", background: "#fff", color: "#1e293b" };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f0f4ff", fontFamily: "'Inter',sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#eef4ff", fontFamily: "'DM Sans',sans-serif" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap');
-        input,select,textarea{color:#030a1e!important;font-size:15px!important;font-family:'Inter',sans-serif!important;}
-        input::placeholder,textarea::placeholder{color:#9ca3af!important;}
-        input:focus,select:focus,textarea:focus{border-color:#1a56db!important;outline:none!important;}
-        button{font-family:'Inter',sans-serif!important;}
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        *{box-sizing:border-box;}
+        input,select,textarea{color:#1e293b!important;font-size:14px!important;font-family:'DM Sans',sans-serif!important;}
+        input::placeholder{color:#94a3b8!important;}
+        input:focus,select:focus{border-color:#0a2463!important;outline:none!important;}
+        button{font-family:'DM Sans',sans-serif!important;}
       `}</style>
       <StaffNavbar user={user} onSignOut={signOut} />
 
       <div style={{ padding: "24px 5%" }}>
-        {/* Gradient stat cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
+
+        {/* Stat cards — thicker left border, powder blue bg */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px", marginBottom: "24px" }}>
           {[
-            { label: "Total Rooms", value: stats.total, bg: "linear-gradient(135deg,#0f2d6b,#1a56db)" },
-            { label: "Occupied", value: stats.occupied, bg: "linear-gradient(135deg,#7f1d1d,#ef4444)" },
-            { label: "Available", value: stats.available, bg: "linear-gradient(135deg,#064e3b,#10b981)" },
-            { label: "ICU Occupied", value: stats.icu, bg: "linear-gradient(135deg,#92400e,#f59e0b)" },
+            { label: "Total Rooms", value: stats.total, border: "#93c5fd" },
+            { label: "Occupied", value: stats.occupied, border: "#fca5a5" },
+            { label: "Available", value: stats.available, border: "#86efac" },
+            { label: "ICU Occupied", value: stats.icu, border: "#fcd34d" },
           ].map((s, i) => (
-            <div key={i} style={{ background: s.bg, borderRadius: "16px", padding: "22px 24px", boxShadow: "0 4px 16px rgba(0,0,0,0.15)", color: "white" }}>
-              <div style={{ fontSize: "14px", opacity: 0.75, marginBottom: "8px", fontWeight: 500 }}>{s.label}</div>
-              <div style={{ fontSize: "40px", fontWeight: "900", fontFamily: "'Playfair Display',serif", letterSpacing: "-2px", lineHeight: 1 }}>{s.value}</div>
+            <div key={i} style={{ background: "#dbeafe", borderRadius: 12, padding: "22px 24px", border: "1px solid #bfdbfe", borderLeft: `6px solid ${s.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <div style={{ fontSize: 13, color: "#475569", marginBottom: 10, fontWeight: 500 }}>{s.label}</div>
+              <div style={{ fontSize: 44, fontWeight: 700, color: "#0a2463", lineHeight: 1 }}>{s.value}</div>
             </div>
           ))}
         </div>
 
-        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+        {/* Filter tabs */}
+        <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
           {[{ key: "all", label: "All Rooms" }, { key: "available", label: "Available" }, { key: "occupied", label: "Occupied" }, { key: "icu", label: "ICU" }].map(f => (
             <button key={f.key} onClick={() => setFilter(f.key)}
-              style={{ padding: "10px 22px", borderRadius: "10px", border: "none", background: filter === f.key ? "linear-gradient(135deg,#0f2d6b,#1a56db)" : "white", color: filter === f.key ? "white" : "#666", fontWeight: "700", fontSize: "15px", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", transition: "all 0.2s" }}>
+              style={{ padding: "8px 22px", borderRadius: 8, border: `1px solid ${filter === f.key ? "#0a2463" : "#e3e6ef"}`, background: filter === f.key ? "#0a2463" : "white", color: filter === f.key ? "white" : "#64748b", fontWeight: 600, fontSize: 13, cursor: "pointer", transition: "all 0.15s" }}>
               {f.label}
             </button>
           ))}
         </div>
 
-        {loading ? <div style={{ textAlign: "center", padding: "60px", color: "#666", fontSize: 15 }}>Loading rooms...</div> : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "16px" }}>
+        {loading ? <div style={{ textAlign: "center", padding: 60, color: "#94a3b8", fontSize: 14 }}>Loading rooms...</div> : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "14px" }}>
             {filteredRooms.map(room => (
-              <div key={room.room_id} style={{ background: getRoomColor(room), borderRadius: "16px", padding: "24px", border: `2px solid ${getRoomBorder(room)}` }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
+              <div key={room.room_id} style={{ background: "#eff6ff", borderRadius: 12, padding: "20px", border: "1px solid #bfdbfe", borderTop: `4px solid ${room.room_type === "ICU" ? (room.is_occupied ? "#fca5a5" : "#fcd34d") : (room.is_occupied ? "#fca5a5" : "#86efac")}`, boxShadow: "0 1px 6px rgba(30,64,175,0.07)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                   <div>
-                    <div style={{ fontSize: "22px", fontWeight: "900", color: "#030a1e", fontFamily: "'Playfair Display',serif" }}>Room {room.room_number}</div>
-                    <div style={{ fontSize: "14px", color: "#666", marginTop: "2px" }}>{room.room_type}</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, color: "#0a2463" }}>Room {room.room_number}</div>
+                    <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{room.room_type}</div>
                   </div>
-                  <div style={{ padding: "5px 13px", borderRadius: "20px", fontSize: "13px", fontWeight: "700", background: room.is_occupied ? "#fee2e2" : "#dcfce7", color: room.is_occupied ? "#dc2626" : "#16a34a", border: `1px solid ${room.is_occupied ? "#fca5a5" : "#bbf7d0"}` }}>
+                  <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: room.is_occupied ? "#fff1f2" : "#f0fdf4", color: room.is_occupied ? "#9f1239" : "#166534", border: `1px solid ${room.is_occupied ? "#fecdd3" : "#bbf7d0"}` }}>
                     {room.is_occupied ? "Occupied" : "Available"}
-                  </div>
+                  </span>
                 </div>
-                <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px" }}>₹{room.price_per_day.toLocaleString()}/day + ₹{room.doctor_charges_per_day.toLocaleString()} doctor</div>
+                <div style={{ fontSize: 13, color: "#475569", marginBottom: 14, fontWeight: 500 }}>₹{room.price_per_day.toLocaleString()}/day + ₹{room.doctor_charges_per_day.toLocaleString()} doctor</div>
                 {room.is_occupied && room.patient && (
-                  <div style={{ background: "white", borderRadius: "10px", padding: "12px", marginBottom: "12px", border: "1px solid rgba(0,0,0,0.06)" }}>
-                    <div style={{ fontWeight: "800", color: "#030a1e", fontSize: "16px" }}>{(room.patient as any).name}</div>
-                    <div style={{ color: "#666", fontSize: "13px", marginTop: "2px" }}>UHID: {(room.patient as any).uhid || "Not assigned"}</div>
-                    {room.admitted_on && <div style={{ color: "#888", fontSize: "13px", marginTop: "4px" }}>Day {getDaysSince(room.admitted_on)} · Admitted {new Date(room.admitted_on).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</div>}
+                  <div style={{ background: "white", borderRadius: 8, padding: "10px 12px", marginBottom: 12, border: "1px solid #bfdbfe" }}>
+                    <div style={{ fontWeight: 700, color: "#0a2463", fontSize: 14 }}>{(room.patient as any).name}</div>
+                    <div style={{ color: "#64748b", fontSize: 12, marginTop: 2 }}>{(room.patient as any).uhid || "—"}</div>
+                    {room.admitted_on && <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 3 }}>Day {getDaysSince(room.admitted_on)} · {new Date(room.admitted_on).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</div>}
                   </div>
                 )}
-                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                   {!room.is_occupied ? (
                     <button onClick={() => { setSelectedRoom(room); setShowAssign(true); }}
-                      style={{ flex: 1, background: "linear-gradient(135deg,#0f2d6b,#1a56db)", color: "white", border: "none", padding: "11px", borderRadius: "10px", fontSize: "14px", fontWeight: "700", cursor: "pointer" }}>Assign Patient</button>
+                      style={{ flex: 1, background: "white", color: "#0a2463", border: "2px solid #0a2463", padding: "9px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s" }}>
+                      Assign Patient
+                    </button>
                   ) : (
                     <>
-                      <button onClick={() => openMedicinesModal(room)} style={{ flex: 1, background: "linear-gradient(135deg,#1e1b4b,#7c3aed)", color: "white", border: "none", padding: "11px", borderRadius: "10px", fontSize: "14px", fontWeight: "700", cursor: "pointer" }}>💊 Medicines</button>
-                      <button onClick={() => { setSelectedRoom(room); calculateBill(room); }} style={{ flex: 1, background: "linear-gradient(135deg,#0c4a6e,#1a73e8)", color: "white", border: "none", padding: "11px", borderRadius: "10px", fontSize: "14px", fontWeight: "700", cursor: "pointer" }}>View Bill</button>
-                      <button onClick={() => { setSelectedRoom(room); calculateBill(room); setShowDischarge(true); }} style={{ width: "100%", background: "linear-gradient(135deg,#7f1d1d,#ef4444)", color: "white", border: "none", padding: "11px", borderRadius: "10px", fontSize: "14px", fontWeight: "700", cursor: "pointer", marginTop: "4px" }}>Discharge</button>
+                      <button onClick={() => openMedicinesModal(room)} style={{ flex: 1, background: "white", color: "#1e40af", border: "1px solid #bfdbfe", padding: "9px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Medicines</button>
+                      <button onClick={() => { setSelectedRoom(room); calculateBill(room); }} style={{ flex: 1, background: "white", color: "#166534", border: "1px solid #bbf7d0", padding: "9px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Bill</button>
+                      <button onClick={() => { setSelectedRoom(room); calculateBill(room); setShowDischarge(true); }} style={{ width: "100%", background: "#fff1f2", color: "#9f1239", border: "1px solid #fecdd3", padding: "9px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", marginTop: 4 }}>Discharge</button>
                     </>
                   )}
                 </div>
@@ -274,26 +277,26 @@ export default function RoomsPage() {
 
       {/* ASSIGN MODAL */}
       {showAssign && selectedRoom && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: "20px" }}>
-          <div style={{ background: "white", borderRadius: "20px", padding: "36px", width: "100%", maxWidth: "500px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
-            <h3 style={{ color: "#030a1e", fontSize: "22px", marginBottom: "6px", fontWeight: 900, fontFamily: "'Playfair Display',serif" }}>Assign Patient to Room {selectedRoom.room_number}</h3>
-            <p style={{ color: "#9ca3af", fontSize: "14px", marginBottom: "24px" }}>{selectedRoom.room_type} · ₹{selectedRoom.price_per_day}/day</p>
-            <input type="text" placeholder="Search by name or phone..." value={patientSearch} onChange={e => setPatientSearch(e.target.value)} style={{ ...inp, marginBottom: "12px" }} />
-            <div style={{ maxHeight: "280px", overflowY: "auto", border: "1.5px solid #e0e7ff", borderRadius: "12px", marginBottom: "20px" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 20 }}>
+          <div style={{ background: "white", borderRadius: 16, padding: 32, width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
+            <h3 style={{ color: "#0a2463", fontSize: 18, marginBottom: 4, fontWeight: 700 }}>Assign Patient — Room {selectedRoom.room_number}</h3>
+            <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>{selectedRoom.room_type} · ₹{selectedRoom.price_per_day}/day</p>
+            <input type="text" placeholder="Search by name or phone..." value={patientSearch} onChange={e => setPatientSearch(e.target.value)} style={{ ...inp, marginBottom: 10 }} />
+            <div style={{ maxHeight: 260, overflowY: "auto", border: "1px solid #e3e6ef", borderRadius: 10, marginBottom: 18 }}>
               {patients.filter(p => p.name.toLowerCase().includes(patientSearch.toLowerCase()) || p.phone.includes(patientSearch)).map(p => (
                 <div key={p.patient_id} onClick={() => setSelectedPatient(p.patient_id)}
-                  style={{ padding: "13px 16px", cursor: "pointer", borderBottom: "1px solid #f0f0f0", background: selectedPatient === p.patient_id ? "#eff6ff" : "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  style={{ padding: "12px 14px", cursor: "pointer", borderBottom: "1px solid #f6f8fb", background: selectedPatient === p.patient_id ? "#eff6ff" : "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <div style={{ fontWeight: "700", color: "#030a1e", fontSize: "15px" }}>{p.name}</div>
-                    <div style={{ color: "#888", fontSize: "13px" }}>{p.phone} {p.uhid ? `· ${p.uhid}` : ""}</div>
+                    <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 14 }}>{p.name}</div>
+                    <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>{p.phone} {p.uhid ? `· ${p.uhid}` : ""}</div>
                   </div>
-                  {selectedPatient === p.patient_id && <div style={{ color: "#1a73e8", fontWeight: "800", fontSize: 18 }}>✓</div>}
+                  {selectedPatient === p.patient_id && <span style={{ color: "#0a2463", fontWeight: 700 }}>✓</span>}
                 </div>
               ))}
             </div>
-            <div style={{ display: "flex", gap: "12px" }}>
-              <button onClick={() => { setShowAssign(false); setSelectedPatient(null); setPatientSearch(""); }} style={{ flex: 1, background: "#f0f4ff", color: "#030a1e", border: "none", padding: "13px", borderRadius: "12px", fontSize: "15px", fontWeight: "600", cursor: "pointer" }}>Cancel</button>
-              <button onClick={assignRoom} disabled={saving || !selectedPatient} style={{ flex: 1, background: saving || !selectedPatient ? "#94a3b8" : "linear-gradient(135deg,#0f2d6b,#1a56db)", color: "white", border: "none", padding: "13px", borderRadius: "12px", fontSize: "15px", fontWeight: "700", cursor: saving || !selectedPatient ? "not-allowed" : "pointer" }}>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => { setShowAssign(false); setSelectedPatient(null); setPatientSearch(""); }} style={{ flex: 1, background: "#f6f8fb", color: "#64748b", border: "1px solid #e3e6ef", padding: "11px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+              <button onClick={assignRoom} disabled={saving || !selectedPatient} style={{ flex: 1, background: saving || !selectedPatient ? "#94a3b8" : "#0a2463", color: "white", border: "none", padding: "11px", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: saving || !selectedPatient ? "not-allowed" : "pointer" }}>
                 {saving ? "Assigning..." : "Assign Room →"}
               </button>
             </div>
@@ -303,88 +306,88 @@ export default function RoomsPage() {
 
       {/* MEDICINES MODAL */}
       {showMedicines && selectedRoom && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: "20px" }}>
-          <div style={{ background: "white", borderRadius: "20px", padding: "36px", width: "100%", maxWidth: "560px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
-            <h3 style={{ color: "#030a1e", fontSize: "22px", marginBottom: "4px", fontWeight: 900, fontFamily: "'Playfair Display',serif" }}>💊 Medicines Given</h3>
-            <p style={{ color: "#9ca3af", fontSize: "14px", marginBottom: "20px" }}>Room {selectedRoom.room_number} · {(selectedRoom.patient as any)?.name}</p>
-            <div style={{ background: "#f8f9fc", borderRadius: "12px", padding: "16px", marginBottom: "20px", border: "1px solid #e8edf5" }}>
-              <div style={{ fontWeight: "700", fontSize: "14px", color: "#030a1e", marginBottom: "12px" }}>Add Medicine</div>
-              <div style={{ position: "relative", marginBottom: "10px" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 20 }}>
+          <div style={{ background: "white", borderRadius: 16, padding: 32, width: "100%", maxWidth: 540, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", maxHeight: "90vh", overflowY: "auto" }}>
+            <h3 style={{ color: "#0a2463", fontSize: 18, marginBottom: 4, fontWeight: 700 }}>Medicines Given</h3>
+            <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>Room {selectedRoom.room_number} · {(selectedRoom.patient as any)?.name}</p>
+            <div style={{ background: "#f6f8fb", borderRadius: 10, padding: 16, marginBottom: 20, border: "1px solid #e3e6ef" }}>
+              <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b", marginBottom: 10 }}>Add Medicine</div>
+              <div style={{ position: "relative", marginBottom: 10 }}>
                 <input value={medSearch} onChange={e => handleMedSearch(e.target.value)} placeholder="Type 2+ letters to search..." style={inp} />
-                {selectedMedName && <div style={{ fontSize: "13px", color: "#16a34a", marginTop: "4px", fontWeight: "600" }}>✓ {selectedMedName}</div>}
+                {selectedMedName && <div style={{ fontSize: 12, color: "#166534", marginTop: 4, fontWeight: 600 }}>✓ {selectedMedName}</div>}
                 {medSuggestions.length > 0 && !selectedMedId && (
-                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "white", borderRadius: "10px", border: "1.5px solid #e0e7ff", boxShadow: "0 8px 24px rgba(0,0,0,0.1)", zIndex: 50, maxHeight: "180px", overflowY: "auto" }}>
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "white", borderRadius: 8, border: "1px solid #e3e6ef", boxShadow: "0 8px 24px rgba(0,0,0,0.08)", zIndex: 50, maxHeight: 180, overflowY: "auto" }}>
                     {medSuggestions.map(m => (
                       <div key={m.id} onClick={() => { setSelectedMedId(m.id); setSelectedMedName(m.name); setMedSearch(m.name); setMedSuggestions([]); }}
-                        style={{ padding: "11px 16px", cursor: "pointer", fontSize: "14px", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between" }}
+                        style={{ padding: "10px 14px", cursor: "pointer", fontSize: 13, borderBottom: "1px solid #f6f8fb", display: "flex", justifyContent: "space-between" }}
                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#eff6ff"}
                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "white"}>
-                        <span>{m.name}</span><span style={{ color: "#888", fontSize: "12px" }}>₹{m.unit_price || 0}</span>
+                        <span>{m.name}</span><span style={{ color: "#94a3b8", fontSize: 12 }}>₹{m.unit_price || 0}</span>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "10px", marginBottom: "10px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, marginBottom: 10 }}>
                 <div>
-                  <label style={{ fontSize: "13px", color: "#374151", display: "block", marginBottom: "5px", fontWeight: 600 }}>Qty</label>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 4, fontWeight: 500 }}>Qty</label>
                   <input type="number" value={medQty} onChange={e => setMedQty(e.target.value)} min="1" style={inp} />
                 </div>
                 <div>
-                  <label style={{ fontSize: "13px", color: "#374151", display: "block", marginBottom: "5px", fontWeight: 600 }}>Notes (optional)</label>
+                  <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 4, fontWeight: 500 }}>Notes (optional)</label>
                   <input value={medNotes} onChange={e => setMedNotes(e.target.value)} placeholder="e.g. IV, oral..." style={inp} />
                 </div>
               </div>
               <button onClick={addMedicineToPatient} disabled={saving || !selectedMedId}
-                style={{ width: "100%", padding: "11px", background: saving || !selectedMedId ? "#94a3b8" : "linear-gradient(135deg,#1e1b4b,#7c3aed)", color: "white", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: "700", cursor: saving || !selectedMedId ? "not-allowed" : "pointer" }}>
+                style={{ width: "100%", padding: "10px", background: saving || !selectedMedId ? "#94a3b8" : "#0a2463", color: "white", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: saving || !selectedMedId ? "not-allowed" : "pointer" }}>
                 {saving ? "Adding..." : "+ Add Medicine"}
               </button>
             </div>
-            <div style={{ fontWeight: "700", fontSize: "14px", color: "#374151", marginBottom: "10px" }}>Medicines Given ({medicinesUsed.length})</div>
-            {medicinesUsed.length === 0 ? <div style={{ color: "#999", fontSize: "14px", textAlign: "center", padding: "20px" }}>No medicines added yet</div> : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
+            <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b", marginBottom: 10 }}>Medicines Given ({medicinesUsed.length})</div>
+            {medicinesUsed.length === 0 ? <div style={{ color: "#94a3b8", fontSize: 13, textAlign: "center", padding: 20 }}>No medicines added yet</div> : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
                 {medicinesUsed.map((m, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 14px", background: "#f8f9fc", borderRadius: "10px", border: "1px solid #e8edf5" }}>
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#f6f8fb", borderRadius: 8, border: "1px solid #e3e6ef" }}>
                     <div>
-                      <div style={{ fontWeight: "700", color: "#030a1e", fontSize: "15px" }}>{m.name}</div>
-                      <div style={{ color: "#888", fontSize: "13px" }}>Qty: {m.quantity} · ₹{m.unit_price} each = <strong style={{ color: "#030a1e" }}>₹{(m.unit_price * m.quantity).toFixed(2)}</strong>{m.notes ? ` · ${m.notes}` : ""}</div>
+                      <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{m.name}</div>
+                      <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>Qty: {m.quantity} · ₹{m.unit_price} = <strong style={{ color: "#0a2463" }}>₹{(m.unit_price * m.quantity).toFixed(2)}</strong>{m.notes ? ` · ${m.notes}` : ""}</div>
                     </div>
-                    <button onClick={() => removeMedicine(m.pres_id)} style={{ background: "#fee2e2", color: "#dc2626", border: "none", padding: "6px 12px", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 700 }}>Remove</button>
+                    <button onClick={() => removeMedicine(m.pres_id)} style={{ background: "#fff1f2", color: "#9f1239", border: "1px solid #fecdd3", padding: "5px 10px", borderRadius: 6, fontSize: 12, cursor: "pointer", fontWeight: 600 }}>Remove</button>
                   </div>
                 ))}
               </div>
             )}
             <button onClick={() => { setShowMedicines(false); setMedSearch(""); setMedSuggestions([]); setSelectedMedId(null); setSelectedMedName(""); setMedicinesUsed([]); }}
-              style={{ width: "100%", background: "#f0f4ff", color: "#030a1e", border: "none", padding: "13px", borderRadius: "12px", fontSize: "15px", fontWeight: "700", cursor: "pointer" }}>Close</button>
+              style={{ width: "100%", background: "#f6f8fb", color: "#64748b", border: "1px solid #e3e6ef", padding: "11px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Close</button>
           </div>
         </div>
       )}
 
       {/* BILL MODAL */}
       {showBill && bill && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: "20px" }}>
-          <div style={{ background: "white", borderRadius: "20px", padding: "36px", width: "100%", maxWidth: "480px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
-            <h3 style={{ color: "#030a1e", fontSize: "22px", marginBottom: "4px", fontWeight: 900, fontFamily: "'Playfair Display',serif" }}>Bill Summary</h3>
-            <p style={{ color: "#9ca3af", fontSize: "14px", marginBottom: "24px" }}>Room {bill.room.room_number} · {bill.days} day{bill.days > 1 ? "s" : ""}</p>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 20 }}>
+          <div style={{ background: "white", borderRadius: 16, padding: 32, width: "100%", maxWidth: 460, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", maxHeight: "90vh", overflowY: "auto" }}>
+            <h3 style={{ color: "#0a2463", fontSize: 18, marginBottom: 4, fontWeight: 700 }}>Bill Summary</h3>
+            <p style={{ color: "#94a3b8", fontSize: 13, marginBottom: 20 }}>Room {bill.room.room_number} · {bill.days} day{bill.days > 1 ? "s" : ""}</p>
             {[
               { label: `Room charges (₹${bill.room.price_per_day.toLocaleString()} × ${bill.days} days)`, amount: bill.roomCharges },
               { label: `Doctor charges (₹${bill.room.doctor_charges_per_day.toLocaleString()} × ${bill.days} days)`, amount: bill.doctorCharges },
               { label: `Pharmacy / Medicines (${bill.medicinesList?.length || 0} items)`, amount: bill.pharmacyCharges },
             ].map((item, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "13px 0", borderBottom: "1px solid #f5f5f5" }}>
-                <span style={{ color: "#555", fontSize: "15px" }}>{item.label}</span>
-                <span style={{ fontWeight: "700", color: "#030a1e", fontSize: "15px" }}>₹{item.amount.toLocaleString()}</span>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "13px 0", borderBottom: "1px solid #f6f8fb" }}>
+                <span style={{ color: "#64748b", fontSize: 14 }}>{item.label}</span>
+                <span style={{ fontWeight: 600, color: "#1e293b", fontSize: 14 }}>₹{item.amount.toLocaleString()}</span>
               </div>
             ))}
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "16px 0", borderTop: "2px solid #030a1e", marginTop: "8px" }}>
-              <span style={{ fontWeight: "900", color: "#030a1e", fontSize: "20px", fontFamily: "'Playfair Display',serif" }}>Total</span>
-              <span style={{ fontWeight: "900", color: "#030a1e", fontSize: "26px", fontFamily: "'Playfair Display',serif", letterSpacing: "-1px" }}>₹{bill.total.toLocaleString()}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "16px 0", borderTop: "2px solid #0a2463", marginTop: 8 }}>
+              <span style={{ fontWeight: 700, color: "#0a2463", fontSize: 18 }}>Total</span>
+              <span style={{ fontWeight: 700, color: "#0a2463", fontSize: 26 }}>₹{bill.total.toLocaleString()}</span>
             </div>
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "8px" }}>
-              <button onClick={() => { setShowBill(false); setShowDischarge(false); setBill(null); }} style={{ flex: 1, background: "#f0f4ff", color: "#030a1e", border: "none", padding: "13px", borderRadius: "12px", fontSize: "15px", fontWeight: "600", cursor: "pointer" }}>Close</button>
-              <button onClick={handlePrintBill} style={{ flex: 1, background: "white", color: "#030a1e", border: "2px solid #030a1e", padding: "13px", borderRadius: "12px", fontSize: "15px", fontWeight: "700", cursor: "pointer" }}>🖨️ Print Bill</button>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
+              <button onClick={() => { setShowBill(false); setShowDischarge(false); setBill(null); }} style={{ flex: 1, background: "#f6f8fb", color: "#64748b", border: "1px solid #e3e6ef", padding: "11px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Close</button>
+              <button onClick={handlePrintBill} style={{ flex: 1, background: "white", color: "#0a2463", border: "2px solid #0a2463", padding: "11px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Print Bill</button>
               {showDischarge && (
-                <button onClick={dischargePatient} disabled={saving} style={{ width: "100%", background: saving ? "#94a3b8" : "linear-gradient(135deg,#7f1d1d,#ef4444)", color: "white", border: "none", padding: "13px", borderRadius: "12px", fontSize: "15px", fontWeight: "700", cursor: saving ? "not-allowed" : "pointer" }}>
+                <button onClick={dischargePatient} disabled={saving} style={{ width: "100%", background: saving ? "#94a3b8" : "#fff1f2", color: saving ? "white" : "#9f1239", border: "1px solid #fecdd3", padding: "11px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer" }}>
                   {saving ? "Processing..." : "Confirm Discharge"}
                 </button>
               )}
