@@ -92,7 +92,7 @@ export default function RoomsPage() {
     if (data) setPatients(data);
   };
   const fetchIpdMedicines = async () => {
-    const { data } = await supabase.from("medicine_list").select("id, name, unit_price").eq("type", "ipd").order("name");
+    const { data } = await supabase.from("medicine_list").select("id, name, unit_price").order("name");
     if (data) setIpdMedicines(data as any);
   };
   const fetchMedicinesUsed = useCallback(async (ipdId: number) => {

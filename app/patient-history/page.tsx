@@ -64,7 +64,14 @@ export default function PatientHistoryPage() {
     if (!tokenMatch) return;
     const tokenNumber = parseInt(tokenMatch[1]);
     setPrescriptionLoading(prev => ({ ...prev, [idx]: true }));
-    const { data } = await supabase.from("opd_prescription").select("*").eq("token_number", tokenNumber).single();
+    const { data } = await supabase
+      .from("opd_prescription")
+      .select("*")
+      .eq("token_number", tokenNumber)
+      .ilike("patient_name", selectedPatient!.name)
+      .order("id", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     setExpandedPrescriptions(prev => ({ ...prev, [idx]: data as Prescription || null }));
     setPrescriptionLoading(prev => ({ ...prev, [idx]: false }));
   };

@@ -121,7 +121,7 @@ export default function WalkIn() {
               style={{
                 width: "100%", padding: "12px 16px", borderRadius: "10px",
                 border: "1.5px solid #e0e7ff", fontSize: "16px",
-                outline: "none", fontFamily: "Georgia, serif", boxSizing: "border-box"
+                outline: "none", fontFamily: "Georgia, serif", boxSizing: "border-box", color: "#030a1e"
               }}
             />
           </div>
@@ -138,7 +138,7 @@ export default function WalkIn() {
               style={{
                 width: "100%", padding: "12px 16px", borderRadius: "10px",
                 border: "1.5px solid #e0e7ff", fontSize: "16px",
-                outline: "none", fontFamily: "Georgia, serif", boxSizing: "border-box"
+                outline: "none", fontFamily: "Georgia, serif", boxSizing: "border-box", color: "#030a1e"
               }}
             />
           </div>

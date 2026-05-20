@@ -357,7 +357,7 @@ export default function TokenDisplay() {
         {/* Status page notice */}
         <div style={{ textAlign: "center", marginTop: "24px", padding: "14px", background: "white", borderRadius: "12px", boxShadow: "0 2px 8px rgba(10,36,99,0.05)" }}>
           <span style={{ color: "#9ca3af", fontSize: "13px" }}>
-            📱 Patients can check real-time OPD status at <strong style={{ color: "#1a56db" }}>yoursite.vercel.app/status</strong> before leaving home
+            📱 Patients can check real-time OPD status at <strong style={{ color: "#1a56db" }}>localhost:3000/status</strong> before leaving home
           </span>
         </div>
 
