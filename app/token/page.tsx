@@ -157,9 +157,9 @@ export default function TokenDisplay() {
         {/* Main content */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 56px", gap: "48px" }}>
 
-          {/* Now Serving */}
+          {/* Now Attending */}
           <div style={{ textAlign: "center", animation: "fadeInUp 0.5s ease" }}>
-            <div style={{ fontSize: "14px", color: "#1e40af", letterSpacing: "6px", marginBottom: "16px", fontWeight: "700" }}>NOW SERVING</div>
+            <div style={{ fontSize: "14px", color: "#1e40af", letterSpacing: "6px", marginBottom: "16px", fontWeight: "700" }}>NOW ATTENDING</div>
             {currentToken ? (
               <>
                 <div style={{ fontSize: "220px", fontWeight: "800", color: "#0a2463", lineHeight: 1, letterSpacing: "-10px" }}>{currentToken}</div>

@@ -13,11 +13,12 @@ export default function PublicNavbar() {
   }, []);
 
   const links = [
-    { label: "Home", href: "/" },
-    { label: "Services", href: "/services" },
-    { label: "Doctors", href: "/team" },
-    { label: "About", href: "/about" },
-    { label: "Contact", href: "/contact" },
+    { label: "Home",         href: "/" },
+    { label: "Services",     href: "/services" },
+    { label: "Doctors",      href: "/team" },
+    { label: "About",        href: "/about" },
+    { label: "Contact",      href: "/contact" },
+    { label: "Testimonials", href: "/testimonials" },
   ];
 
   return (
@@ -29,30 +30,29 @@ export default function PublicNavbar() {
         transition: "all 0.3s",
         padding: "0 5%", height: "65px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.15)" : "none"
+        boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.15)" : "none",
       }}>
-        {/* logo */}
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-          <div style={{ width: "36px", height: "36px", background: "#1a73e8", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "700", fontSize: "16px", flexShrink: 0 }}>N</div>
-          <div>
-            <div style={{ color: "white", fontWeight: "700", fontSize: "14px", letterSpacing: "-0.3px" }}>Neel Orthopaedic</div>
-            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", letterSpacing: "1px" }}>MULTISPECIALITY HOSPITAL</div>
-          </div>
+        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+          <img
+            src="/logo.png"
+            alt="Neel Orthopaedic Hospital"
+            style={{ height: 44, width: "auto", objectFit: "contain" }}
+          />
         </Link>
 
-        {/* desktop links */}
         <div style={{ display: "flex", gap: "28px", alignItems: "center" }} className="nav-desktop-links">
           {links.map(l => (
-            <Link key={l.label} href={l.href} style={{ color: "rgba(255,255,255,0.85)", textDecoration: "none", fontSize: "14px", fontWeight: "500", fontFamily: "Georgia, serif" }}>
+            <Link key={l.label} href={l.href}
+              style={{ color: "rgba(255,255,255,0.85)", textDecoration: "none", fontSize: "14px", fontWeight: "500", fontFamily: "Georgia, serif" }}>
               {l.label}
             </Link>
           ))}
-          <Link href="/book" style={{ background: "#1a73e8", color: "white", padding: "10px 22px", borderRadius: "25px", textDecoration: "none", fontSize: "14px", fontWeight: "600", fontFamily: "Georgia, serif" }}>
+          <Link href="/book"
+            style={{ background: "#1a73e8", color: "white", padding: "10px 22px", borderRadius: "25px", textDecoration: "none", fontSize: "14px", fontWeight: "600", fontFamily: "Georgia, serif" }}>
             Book OPD
           </Link>
         </div>
 
-        {/* hamburger */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
           style={{ display: "none", background: "none", border: "none", cursor: "pointer", flexDirection: "column", gap: "5px", padding: "4px" }}
@@ -63,13 +63,12 @@ export default function PublicNavbar() {
         </button>
       </nav>
 
-      {/* mobile menu */}
       {menuOpen && (
         <div style={{
           position: "fixed", top: "65px", left: 0, right: 0,
           background: "#0a2463", padding: "20px 5%",
           display: "flex", flexDirection: "column", gap: "4px",
-          zIndex: 99, borderTop: "1px solid rgba(255,255,255,0.1)"
+          zIndex: 99, borderTop: "1px solid rgba(255,255,255,0.1)",
         }} className="mobile-menu">
           {links.map(l => (
             <Link key={l.label} href={l.href} onClick={() => setMenuOpen(false)}
@@ -91,7 +90,6 @@ export default function PublicNavbar() {
         }
       `}</style>
 
-      {/* spacer for fixed navbar */}
       <div style={{ height: "65px" }} />
     </>
   );

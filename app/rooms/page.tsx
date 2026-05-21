@@ -134,14 +134,42 @@ export default function RoomsPage() {
     return prescriptions.map((p: any) => ({ name: medMap[p.medicine_id]?.name || "Unknown", quantity: p.quantity, notes: p.notes || "", unit_price: medMap[p.medicine_id]?.unit_price || 0 }));
   };
 
+  // ✅ FIXED: split into two sequential awaits, maybeSingle() on surgery lookup,
+  // explicit Number() cast, guard on current_patient_id
   const calculateBill = async (room: Room) => {
     if (!room.admitted_on) return;
     const days = Math.max(1, Math.ceil((new Date().getTime() - new Date(room.admitted_on).getTime()) / (1000 * 60 * 60 * 24)));
     const roomCharges = room.price_per_day * days;
     const doctorCharges = room.doctor_charges_per_day * days;
     const medicinesList = room.current_ipd_id ? await getMedicinesForBill(room.current_ipd_id) : [];
-    const pharmacyCharges = medicinesList.reduce((sum: number, m: any) => sum + ((m.unit_price||0) * m.quantity), 0);
-    setBill({ room, days, roomCharges, doctorCharges, pharmacyCharges, total: roomCharges + doctorCharges + pharmacyCharges, medicinesList });
+    const pharmacyCharges = medicinesList.reduce((sum: number, m: any) => sum + ((m.unit_price || 0) * m.quantity), 0);
+
+    let surgeryCharges = 0;
+    let surgeryData: any = null;
+    if (room.current_patient_id) {
+      const { data: latestSurgery } = await supabase
+        .from("surgery")
+        .select("surgery_id")
+        .eq("patient_id", room.current_patient_id)
+        .order("surgery_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestSurgery?.surgery_id) {
+        const { data: sc } = await supabase
+          .from("surgery_charges")
+          .select("*, surgery:surgery_id(surgery_type, surgery_date)")
+          .eq("surgery_id", latestSurgery.surgery_id)
+          .maybeSingle();
+
+        if (sc) {
+          surgeryData = sc;
+          surgeryCharges = Number(sc.total) || 0;
+        }
+      }
+    }
+
+    setBill({ room, days, roomCharges, doctorCharges, pharmacyCharges, surgeryCharges, surgeryData, total: roomCharges + doctorCharges + pharmacyCharges + surgeryCharges, medicinesList });
     setShowBill(true);
   };
 
@@ -363,7 +391,7 @@ export default function RoomsPage() {
         </div>
       )}
 
-      {/* BILL MODAL */}
+      {/* BILL MODAL — ✅ FIXED: amount: bill.surgeryCharges ?? 0 prevents undefined.toLocaleString() crash */}
       {showBill && bill && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 20 }}>
           <div style={{ background: "white", borderRadius: 16, padding: 32, width: "100%", maxWidth: 460, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", maxHeight: "90vh", overflowY: "auto" }}>
@@ -373,12 +401,34 @@ export default function RoomsPage() {
               { label: `Room charges (₹${bill.room.price_per_day.toLocaleString()} × ${bill.days} days)`, amount: bill.roomCharges },
               { label: `Doctor charges (₹${bill.room.doctor_charges_per_day.toLocaleString()} × ${bill.days} days)`, amount: bill.doctorCharges },
               { label: `Pharmacy / Medicines (${bill.medicinesList?.length || 0} items)`, amount: bill.pharmacyCharges },
+              {
+                label: bill.surgeryData
+                  ? `Surgery — ${(bill.surgeryData.surgery as any)?.surgery_type ?? "—"} (${bill.surgeryData.grade ?? "—"}, ${bill.surgeryData.room_type ?? "—"})`
+                  : "Surgery Charges",
+                amount: bill.surgeryCharges ?? 0,
+              },
             ].map((item, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "13px 0", borderBottom: "1px solid #f6f8fb" }}>
                 <span style={{ color: "#64748b", fontSize: 14 }}>{item.label}</span>
                 <span style={{ fontWeight: 600, color: "#1e293b", fontSize: 14 }}>₹{item.amount.toLocaleString()}</span>
               </div>
             ))}
+            {bill.surgeryData && (
+              <div style={{ background: "#f6f8fb", borderRadius: 8, padding: "10px 14px", margin: "8px 0", border: "1px solid #e3e6ef" }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 6 }}>Surgery Breakdown</div>
+                {[
+                  { label: "OT Charges", val: bill.surgeryData.ot_charges },
+                  { label: "Anaesthetist Fees", val: bill.surgeryData.anaesthetist_fees },
+                  { label: "Asst. Surgeon Fees", val: bill.surgeryData.asst_surgeon_fees },
+                  { label: "Surgeon Fees", val: bill.surgeryData.surgeon_fees },
+                ].map((r, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#64748b", padding: "3px 0" }}>
+                    <span>{r.label}</span>
+                    <span>₹{(Number(r.val) || 0).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div style={{ display: "flex", justifyContent: "space-between", padding: "16px 0", borderTop: "2px solid #0a2463", marginTop: 8 }}>
               <span style={{ fontWeight: 700, color: "#0a2463", fontSize: 18 }}>Total</span>
               <span style={{ fontWeight: 700, color: "#0a2463", fontSize: 26 }}>₹{bill.total.toLocaleString()}</span>

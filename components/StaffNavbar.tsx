@@ -49,11 +49,22 @@ export default function StaffNavbar({ user, onSignOut }: StaffNavbarProps) {
   const color = ROLE_COLORS[user.role] || "#0a2463";
 
   return (
-    <div style={{ background: color, padding: "0 24px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", fontFamily: "Georgia, serif" }}>
+    <div style={{
+      background: color, padding: "0 24px", height: 58,
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.15)", fontFamily: "Georgia, serif",
+    }}>
       <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-        <Link href="/" style={{ color: "#fff", textDecoration: "none", fontWeight: 700, fontSize: 15, whiteSpace: "nowrap" }}>
-          🏥 Neel Ortho
+        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+          <img
+            src="/logo.png"
+            alt="Neel Orthopaedic Hospital"
+            style={{ height: 42, width: "auto", objectFit: "contain" }}
+          />
         </Link>
+
+        <div style={{ width: 1, height: 28, background: "rgba(255,255,255,0.2)" }} />
+
         <div style={{ display: "flex", gap: 4 }}>
           {links.map(l => (
             <Link key={l.href} href={l.href}
@@ -79,7 +90,12 @@ export default function StaffNavbar({ user, onSignOut }: StaffNavbarProps) {
           <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, textTransform: "capitalize" }}>{user.role}</div>
         </div>
         <button onClick={onSignOut}
-          style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 8, padding: "6px 14px", fontSize: 12, cursor: "pointer", fontFamily: "Georgia, serif" }}>
+          style={{
+            background: "rgba(255,255,255,0.15)", color: "#fff",
+            border: "1px solid rgba(255,255,255,0.3)", borderRadius: 8,
+            padding: "6px 14px", fontSize: 12, cursor: "pointer",
+            fontFamily: "Georgia, serif",
+          }}>
           Sign Out
         </button>
       </div>

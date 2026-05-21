@@ -126,13 +126,13 @@ export default function Home() {
         display: "flex", alignItems: "center", justifyContent: "space-between",
         borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "none",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          <div style={{ width: "42px", height: "42px", background: "linear-gradient(135deg, #1a56db, #60a5fa)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "900", fontSize: "19px", flexShrink: 0, boxShadow: "0 4px 16px rgba(26,86,219,0.4)" }}>N</div>
-          <div>
-            <div className="body-font" style={{ color: "white", fontWeight: "700", fontSize: "15px", letterSpacing: "-0.3px" }}>Neel Orthopaedic Multispeciality Hospital</div>
-            <div className="body-font" style={{ fontSize: "9px", color: "rgba(255,255,255,0.4)", letterSpacing: "2px" }}>BHAYANDER EAST · MUMBAI</div>
-          </div>
-        </div>
+        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+          <img
+            src="/logo.png"
+            alt="Neel Orthopaedic Hospital"
+            style={{ height: 48, width: "auto", objectFit: "contain" }}
+          />
+        </Link>
 
         <div className="nav-desktop">
           {navLinks.map(item => (
@@ -254,7 +254,6 @@ export default function Home() {
       <section style={{ padding: "120px 6%", background: "#0d1f3c", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: "-200px", left: "-200px", width: "600px", height: "600px", borderRadius: "50%", background: "radial-gradient(circle, rgba(26,86,219,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: "-200px", right: "-100px", width: "500px", height: "500px", borderRadius: "50%", background: "radial-gradient(circle, rgba(52,211,153,0.05) 0%, transparent 70%)", pointerEvents: "none" }} />
-
         <div style={{ maxWidth: "1280px", margin: "0 auto", position: "relative", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center" }}>
           <div className="collage-wrap">
             {["/images/velys1.jpg", "/images/velys2.jpg", "/images/velys3.jpg", "/images/velys4.jpg"].map((src, i) => (
@@ -263,7 +262,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-
           <div>
             <div className="body-font" style={{ display: "inline-block", background: "rgba(26,86,219,0.15)", border: "1px solid rgba(26,86,219,0.35)", color: "#93c5fd", padding: "8px 20px", borderRadius: "30px", fontSize: "11px", letterSpacing: "2.5px", marginBottom: "24px", fontWeight: "700" }}>
               NOW AVAILABLE AT NEEL ORTHOPAEDIC MULTISPECIALITY HOSPITAL
@@ -389,8 +387,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
       {/* ── TESTIMONIALS ── */}
-<TestimonialsSection />
+      <TestimonialsSection />
 
       {/* ── CTA ── */}
       <section style={{ padding: "120px 6%", background: "#030a1e", position: "relative", overflow: "hidden" }}>
@@ -426,11 +425,9 @@ export default function Home() {
       <footer style={{ background: "#020710", padding: "80px 6% 0", color: "rgba(255,255,255,0.4)" }}>
         <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
           <div className="footer-grid" style={{ marginBottom: "56px" }}>
-            {/* Col 1: Info */}
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-                <div style={{ width: "40px", height: "40px", background: "linear-gradient(135deg, #1a56db, #60a5fa)", borderRadius: "11px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "900", fontSize: "18px", flexShrink: 0 }}>N</div>
-                <div className="body-font" style={{ color: "white", fontSize: "15px", fontWeight: "700" }}>Neel Orthopaedic Multispeciality Hospital</div>
+              <div style={{ marginBottom: 20 }}>
+                <img src="/logo.png" alt="Neel Orthopaedic Hospital" style={{ height: 52, width: "auto", objectFit: "contain" }} />
               </div>
               <p className="body-font" style={{ fontSize: "14px", lineHeight: "1.9", marginBottom: "14px", maxWidth: "300px" }}>
                 1st Floor, Shrinath Apartment, Goddev Naka, B.P. Road, Bhayander East, Mumbai — 401105
@@ -439,7 +436,6 @@ export default function Home() {
               <div style={{ fontSize: "13px", fontStyle: "italic", color: "rgba(255,255,255,0.18)", marginTop: "14px", fontFamily: "Georgia, serif" }}>— pain to painless —</div>
             </div>
 
-            {/* Col 2: Links + Timings */}
             <div>
               <div className="body-font" style={{ color: "white", fontWeight: "700", marginBottom: "20px", fontSize: "12px", letterSpacing: "2.5px" }}>QUICK LINKS</div>
               {[
@@ -469,26 +465,19 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Col 3: Google Maps */}
             <div>
               <div className="body-font" style={{ color: "white", fontWeight: "700", marginBottom: "20px", fontSize: "12px", letterSpacing: "2.5px" }}>FIND US</div>
               <div style={{ borderRadius: "16px", overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.06)" }}>
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3765.123456!2d72.8585668!3d19.3045692!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b02e9efb02b5%3A0x2958a8f353e885fd!2sNeel%20Orthopedic%20Super%20Specialty%20Hospital!5e0!3m2!1sen!2sin!4v1234567890"
-                  width="100%"
-                  height="220"
+                  width="100%" height="220"
                   style={{ border: 0, display: "block", filter: "invert(90%) hue-rotate(180deg)" }}
-                  allowFullScreen={false}
-                  loading="lazy"
+                  allowFullScreen={false} loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   title="Neel Orthopaedic Multispeciality Hospital Location"
                 />
               </div>
-              <a
-                href="https://maps.app.goo.gl/1SzWbWRuMnLrNidV8"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="body-font"
+              <a href="https://maps.app.goo.gl/1SzWbWRuMnLrNidV8" target="_blank" rel="noopener noreferrer" className="body-font"
                 style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "12px", color: "#60a5fa", textDecoration: "none", fontSize: "13px", fontWeight: "600", transition: "color 0.2s" }}
                 onMouseEnter={e => (e.currentTarget.style.color = "white")}
                 onMouseLeave={e => (e.currentTarget.style.color = "#60a5fa")}>
